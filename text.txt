@@ -1,0 +1,24 @@
+   <div class="panel" id="panel-reception" style="display:none;">
+    <div style="background:#f1f2f6; padding:20px; border-radius:8px; margin-bottom:20px;">
+        <h4><i class="fas fa-truck-loading"></i> Réception Fournisseur :
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="scan-reception" placeholder="Scanner un produit reçu..." class="swal2-input" style="flex-grow:1;">
+            <button class="tab-btn" style="background:var(--win-blue); color:white;"><i class="fas fa-check-double"></i> Tout valider</button>
+        </div>
+    </div>
+
+    <table class="win-table">
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Qté Commandée</th>
+                <th>Qté Reçue</th>
+                <th>Numéro de Lot</th>
+                <th>Péremption</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="liste-reception-active">
+            </tbody>
+    </table>
+</div>
