@@ -141,265 +141,872 @@ $mouvements_groupes = $pdo->query("SELECT
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <style>
-        /* [Vos styles précédents conservés] */
-        :root { --sidebar-width: 250px; --primary: #2c3e50; --secondary: #27ae60; --warning: #f39c12; --danger: #e74c3c; --info: #3498db; --light: #f4f7f6; --win-blue: #0984e3; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--light); display: flex; }
-        .sidebar { width: var(--sidebar-width); background: var(--primary); height: 100vh; color: white; position: fixed; overflow-y: auto; display: flex; flex-direction: column; }
-        .sidebar-menu { list-style: none; padding: 0; }
-        .sidebar-menu a { color: white; text-decoration: none; padding: 15px 20px; display: flex; align-items: center; gap: 12px; }
-        .sidebar-menu a.active { background: var(--secondary); }
-        .content { margin-left: var(--sidebar-width); flex: 1; padding: 25px; width: calc(100% - var(--sidebar-width)); }
-        
-        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        
-        .tab-navbar { background: var(--primary); padding: 10px; border-radius: 8px 8px 0 0; display: flex; gap: 8px; align-items: center; overflow-x: auto;}
-        .tab-btn { background: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap; transition: 0.2s; }
-        .tab-btn:hover { background: #eee; }
-        
-        .panel { background: white; border-radius: 0 0 8px 8px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 450px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; padding: 12px; border-bottom: 2px solid #eee; color: #7f8c8d; font-size: 0.85rem; }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        
-        .badge-type { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
-        .type-entree { background: #dff9fb; color: #130f40; }
-        .type-sortie { background: #fab1a0; color: #d63031; }
-        .type-ajustement { background: #dfe6e9; color: #2d3436; }
-        
-        .search-box { margin-left: auto; position: relative; }
-        .search-box input { padding: 8px 30px 8px 10px; border-radius: 5px; border: 1px solid #ddd; }
+<style>
+/* =============================================
+   PHARMASSIST — DESIGN SYSTEM UNIFIÉ v2
+   Police: DM Sans (compact, pro, lisible)
+   Thème: Navy sombre + Bleu acier + Blanc
+============================================= */
 
-        /* Style de la barre de navigation */
-/* Assurez-vous que la navbar ne coupe pas le contenu qui dépasse */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary:     #1a2535;
+  --primary-mid: #22334a;
+  --secondary:   #2878d8;
+  --accent:      #3b9eff;
+  --success:     #1a9e5f;
+  --danger:      #d63540;
+  --warning:     #e08a00;
+  --light:       #f0f2f5;
+  --white:       #ffffff;
+  --border:      #d8dde6;
+  --text:        #2a3347;
+  --text-muted:  #7b8a9e;
+  --radius:      4px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08);
+  --shadow:      0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; line-height: 1.4; }
+
+body {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  font-size: 12px;
+  background: var(--light);
+  color: var(--text);
+  display: flex;
+}
+
+h1 { font-size: 15px; font-weight: 700; color: var(--primary); }
+h2 { font-size: 13px; font-weight: 600; color: var(--primary); }
+h3 { font-size: 12px; font-weight: 600; color: var(--primary); }
+h4 { font-size: 11.5px; font-weight: 600; color: var(--primary); }
+h5 { font-size: 11px; font-weight: 600; }
+p, label, small { font-size: 11px; }
+b, strong { font-weight: 600; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 148px;
+  min-height: 100vh;
+  background: var(--primary);
+  position: fixed;
+  top: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  transition: width 0.2s ease;
+}
+
+.sidebar-header {
+  padding: 12px 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.sidebar-header button {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: none;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  letter-spacing: 0.3px;
+  transition: background 0.15s;
+}
+
+.sidebar-header button:hover { background: rgba(255,255,255,0.12); }
+
+.sidebar-menu {
+  list-style: none;
+  padding: 6px 0;
+  flex: 1;
+}
+
+.sidebar-menu li a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-menu li a i {
+  width: 14px;
+  text-align: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.sidebar-menu li a:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+.sidebar-menu li a.active {
+  background: rgba(40,120,216,0.18);
+  border-left-color: var(--secondary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sidebar-menu li a[style*="ff7675"] {
+  color: #ff8585 !important;
+}
+
+/* Sidebar collapsed */
+.sidebar.collapsed { width: 44px; }
+.sidebar.collapsed .sidebar-menu li a span { display: none; }
+.sidebar.collapsed .sidebar-header h2,
+.sidebar.collapsed .sidebar-header .sidebar-title { display: none; }
+
+/* ── CONTENT ── */
+.content {
+  margin-left: 148px;
+  padding: 14px 16px;
+  width: calc(100% - 148px);
+  min-height: 100vh;
+  transition: margin-left 0.2s, width 0.2s;
+}
+
+.content.collapsed {
+  margin-left: 44px;
+  width: calc(100% - 44px);
+}
+
+/* ── PAGE HEADER (Breadcrumb zone) ── */
+.page-header {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+
+#breadcrumb {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+#main-title {
+  font-size: 13px !important;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 !important;
+}
+
+#status-indicator {
+  font-size: 10px !important;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  height: 7px !important;
+  width: 7px !important;
+}
+
+/* ── STAT CARDS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s;
+}
+
+.stat-card:hover { box-shadow: var(--shadow); }
+
+.stat-card > div:first-child { flex: 1; }
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+}
+
+.stat-card i { font-size: 18px; opacity: 0.6; }
+
+/* ── TAB NAVBAR ── */
 .tab-navbar {
-    display: flex;
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    overflow: visible !important; /* CRITIQUE : permet au menu de descendre */
-    position: relative;
-    z-index: 100;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 4px 6px;
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-sm);
 }
 
-.nav-item-dropdown {
-    position: relative; /* CRITIQUE : point de repère pour le menu */
-    display: inline-block;
+.dropbtn {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.12s;
+  white-space: nowrap;
+  position: relative;
 }
+
+.dropbtn:hover { background: var(--light); color: var(--secondary); }
+.dropbtn i { font-size: 10px; }
+
+.nav-item-dropdown { position: relative; }
 
 .dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%; /* Place le menu juste en dessous du bouton */
-    left: 0;
-    background-color: white;
-    min-width: 220px;
-    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-    z-index: 9999; /* CRITIQUE : passe au-dessus de tout le reste */
-    border: 1px solid #ddd;
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  min-width: 190px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 3px 0;
 }
 
-/* Force l'affichage au survol */
-.nav-item-dropdown:hover .dropdown-content {
-    display: block !important;
+.dropdown-content a,
+.dropdown-content .nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  text-decoration: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.1s;
 }
 
-
-/* Style des boutons principaux */
-.dropbtn {
-    background-color: transparent;
-    color: #2c3e50;
-    padding: 15px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: 0.3s;
+.dropdown-content a i,
+.dropdown-content .nav-btn i {
+  width: 13px;
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
-.dropbtn:hover {
-    background-color: #e9ecef;
+.dropdown-content a:hover,
+.dropdown-content .nav-btn:hover {
+  background: var(--light);
+  color: var(--secondary);
 }
 
+.dropdown-content a:hover i,
+.dropdown-content .nav-btn:hover i { color: var(--secondary); }
 
-/* Liens à l'intérieur du dropdown */
-.dropdown-content a {
-    color: #333;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-    font-size: 13px;
-    border-bottom: 1px solid #f1f1f1;
-}
+.nav-item-dropdown:hover .dropdown-content { display: block; }
 
-.dropdown-content a i {
-    width: 20px;
-    margin-right: 10px;
-    color: #555;
-}
+/* Séparateurs dans la navbar */
+.dropbtn[style*="border-left"] { border-left: 1px solid var(--border) !important; }
 
-.dropdown-content a:hover {
-    background-color: #f1f1f1;
-    color: var(--win-blue);
-}
-
-/* Affichage au survol */
-.nav-item-dropdown:hover .dropdown-content {
-    display: block;
-}
-
-.nav-item-dropdown:hover .dropbtn {
-    background-color: #e9ecef;
-}
-
+/* ── BADGE NOTIFY ── */
 .badge-notify {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: #e74c3c;
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-    font-size: 10px;
-    font-weight: bold;
-    border: 1px solid white;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8px;
+  padding: 1px 4px;
+  background: var(--danger);
+  color: white;
+  border-radius: 10px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
-@keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+/* ── PANELS ── */
+.panel {
+  display: none;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  animation: fadePanel 0.15s ease;
 }
 
-.blink-red {
-    animation: blink 1s infinite;
-    box-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
+@keyframes fadePanel {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Panel title */
+.panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--light);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.panel-title i { color: var(--secondary); }
+
+/* ── TABLES ── */
+.win-table,
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.win-table thead tr,
+.table thead tr {
+  background: #f4f6fa !important;
+}
+
+.win-table th {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 7px 9px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  background: #f4f6fa;
+}
+
+.win-table td {
+  padding: 7px 9px;
+  border-bottom: 1px solid #edf0f5;
+  vertical-align: middle;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.win-table tr:last-child td { border-bottom: none; }
+
+.win-table tbody tr:hover { background: #f8fafd; }
+
+/* Bootstrap table overrides */
+.table th {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted) !important;
+  padding: 7px 9px !important;
+  background: #f4f6fa !important;
+  border-color: var(--border) !important;
+}
+
+.table td {
+  font-size: 11px !important;
+  padding: 7px 9px !important;
+  vertical-align: middle !important;
+  border-color: #edf0f5 !important;
+}
+
+.table-hover tbody tr:hover { background: #f8fafd !important; }
+
+/* Dark thead override */
+.table-dark th,
+.table thead tr[style*="background: #2d3436"] th,
+.table thead tr[style*="background:#2d3436"] th {
+  background: var(--primary) !important;
+  color: #fff !important;
+  font-size: 10px !important;
+}
+
+/* ── TABLE CONTAINER ── */
+.table-container {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* ── FILTER BAR ── */
+.filter-bar,
+div[style*="background: #f8f9fa"][style*="display: flex"],
+div[style*="background:#f8f9fa"][style*="display:flex"],
+form.row {
+  background: #f4f6fa !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  padding: 10px 12px !important;
+  gap: 8px !important;
+  margin-bottom: 12px;
+}
+
+.filter-bar label,
+div[style*="background: #f8f9fa"] label {
+  font-size: 10px !important;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 3px;
+  display: block;
+}
+
+/* ── INPUTS & SELECTS ── */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+select,
+textarea,
+.form-control,
+.form-select,
+.win-input {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 11px !important;
+  padding: 5px 8px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  color: var(--text) !important;
+  background: var(--white) !important;
+  width: 100%;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  line-height: 1.4 !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--secondary) !important;
+  box-shadow: 0 0 0 2px rgba(40,120,216,0.12) !important;
+  outline: none !important;
+}
+
+.form-control-sm,
+.input-group-sm input,
+.input-group-sm select {
+  font-size: 11px !important;
+  padding: 4px 7px !important;
+}
+
+/* Input group */
+.input-group-text {
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  background: #f4f6fa !important;
+  border-color: var(--border) !important;
+  color: var(--text-muted) !important;
+}
+
+/* ── BUTTONS ── */
+.tab-btn,
+.btn-action,
+.btn-save {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--light);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.12s;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.tab-btn:hover { background: #e2e7f0; border-color: #c4cbd8; }
+.btn-save { background: var(--secondary); color: #fff; border-color: var(--secondary); }
+.btn-save:hover { background: #1f65c0; border-color: #1f65c0; }
+
+/* Bootstrap btn overrides */
+.btn { font-family: 'DM Sans', sans-serif !important; font-size: 11px !important; }
+.btn-sm { font-size: 10px !important; padding: 3px 8px !important; }
+.btn-primary { background: var(--secondary) !important; border-color: var(--secondary) !important; }
+.btn-success { background: var(--success) !important; border-color: var(--success) !important; }
+.btn-danger  { background: var(--danger) !important;  border-color: var(--danger) !important; }
+.btn-lg { font-size: 12px !important; padding: 7px 16px !important; }
+
+/* ── BADGES ── */
+.badge-type {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: inline-block;
+}
+
+.badge-cat {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #ebf4ff;
+  color: var(--secondary);
+  display: inline-block;
 }
 
 .badge-lot {
-    background: #e2e8f0;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.9rem;
-    color: #4a5568;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #f0f2f5;
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+  display: inline-block;
 }
 
-.win-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
+/* Bootstrap badges */
+.badge { font-size: 9px !important; font-weight: 700 !important; padding: 3px 7px !important; }
+.bg-success { background-color: var(--success) !important; }
+.bg-danger  { background-color: var(--danger)  !important; }
+.bg-warning { background-color: var(--warning) !important; }
+
+/* Statut badges custom */
+.statut-badge {
+  font-size: 9px !important;
+  font-weight: 700;
+  padding: 3px 8px !important;
+  border-radius: 10px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-.win-table th, .win-table td {
-    padding: 12px 10px;
-    border-bottom: 1px solid #e2e8f0;
-    text-align: left;
+/* ── CARDS (Bootstrap) ── */
+.card { border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow-sm) !important; }
+.card-header {
+  background: var(--white) !important;
+  border-bottom: 2px solid var(--light) !important;
+  padding: 9px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
 }
 
-.win-table tr:hover {
-    background-color: #f7fafc !important;
+.card-body { padding: 12px 14px !important; }
+.card-header h5 { font-size: 12px !important; margin: 0 !important; }
+
+/* ── ALERT BOXES ── */
+.alert {
+  font-size: 11px !important;
+  padding: 8px 12px !important;
+  border-radius: var(--radius) !important;
 }
 
-/* Le conteneur principal */
-.content {
-    margin-left: 260px; /* Largeur de ta sidebar */
-    padding: 20px;
-    position: relative;
+.alert-info {
+  background: #e8f3fd !important;
+  border-color: #b8d9f8 !important;
+  color: #1a4d7e !important;
 }
 
-/* Les panels */
-.panel {
-    display: none; /* Caché par défaut */
-    width: 100%;
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    /* Supprime tout 'position: absolute' ici s'il y en a un */
+/* ── MINI STAT BOXES dans panels ── */
+div[style*="background: #fff5f5"],
+div[style*="background: #fffaf0"],
+div[style*="background: #f0fff4"] {
+  border-radius: var(--radius) !important;
+  padding: 10px 12px !important;
 }
 
-.panel {
-    display: none; /* Tous cachés par défaut */
-    animation: fadeIn 0.3s; /* Petit effet de transition sympa */
+div[style*="background: #fff5f5"] span,
+div[style*="background: #fffaf0"] span,
+div[style*="background: #f0fff4"] span {
+  font-size: 11px !important;
 }
 
+/* Grand chiffre dans mini stats */
+div[style*="background: #fff5f5"] span[style*="font-size: 1.5rem"],
+div[style*="background: #fffaf0"] span[style*="font-size: 1.5rem"],
+div[style*="background: #f0fff4"] span[style*="font-size: 1.5rem"] {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+}
+
+/* ── PROGRESS BAR ── */
+.progress { height: 14px !important; border-radius: 7px !important; }
+.progress-bar { font-size: 9px !important; font-weight: 700 !important; }
+
+/* ── SEARCH RESULTS FLOATING ── */
+.search-results-floating {
+  position: absolute;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-top: none;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 9000;
+  box-shadow: var(--shadow);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.search-results-floating .result-item,
+.result-item {
+  padding: 7px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--light);
+  transition: background 0.1s;
+}
+
+.search-results-floating .result-item:hover,
+.result-item:hover { background: #eef4fd; color: var(--secondary); }
+
+/* ── GROUP BOX (form sections) ── */
+.group-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+/* ── MODALS ── */
+.modal-header { padding: 10px 14px !important; }
+.modal-title { font-size: 13px !important; font-weight: 700 !important; }
+.modal-body  { padding: 12px 14px !important; font-size: 11px !important; }
+.modal-footer { padding: 8px 14px !important; }
+
+.modal-header.bg-info { background: var(--secondary) !important; }
+
+/* ── FICHE MODAL (custom) ── */
+#modalFiche > div {
+  border-radius: 6px !important;
+  padding: 16px !important;
+}
+
+/* ── TABLES inside panels with inline styles ── */
+/* Override paddings trop grands dans les panels */
+td[style*="padding:12px"], th[style*="padding:15px"],
+td[style*="padding:15px"] {
+  padding: 7px 9px !important;
+}
+
+td[style*="padding:10px"], th[style*="padding:10px"] {
+  padding: 6px 9px !important;
+}
+
+/* Override des font-size inline */
+[style*="font-size:13px"]:not(.sidebar-menu *):not(body) { font-size: 11px !important; }
+[style*="font-size: 13px"]:not(.sidebar-menu *):not(body) { font-size: 11px !important; }
+[style*="font-size:14px"] { font-size: 11px !important; }
+[style*="font-size: 14px"] { font-size: 11px !important; }
+[style*="font-size:16px"] { font-size: 13px !important; }
+[style*="font-size: 16px"] { font-size: 13px !important; }
+[style*="font-size: 1.5rem"] { font-size: 1.2rem !important; }
+[style*="font-size:1.5rem"]  { font-size: 1.2rem !important; }
+[style*="font-size: 0.9rem"] { font-size: 10px !important; }
+[style*="font-size: 0.85rem"]{ font-size: 10px !important; }
+[style*="font-size: 0.8rem"] { font-size: 10px !important; }
+
+/* h2 inline dans panels */
+h2[style], h2.text-primary { font-size: 13px !important; }
+
+/* ── AUTOPILOTE TABLE ── */
+#table_autopilote,
+#table_autopilote th,
+#table_autopilote td {
+  font-size: 11px;
+}
+
+#table_autopilote th {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 7px 9px;
+  background: #f4f6fa;
+  border-bottom: 2px solid var(--border);
+}
+
+/* ── PANEL ALERTES ── */
+#panel-alertes-perimes .win-table th,
+#panel-alertes .win-table th {
+  background: #f4f6fa;
+}
+
+/* ── JOURNAL DES ACTIVITES ── */
+#panel-logs table th { font-size: 10px !important; padding: 6px 9px !important; }
+#panel-logs table td { font-size: 11px !important; padding: 6px 9px !important; }
+
+/* ── INVENTAIRE ── */
+#panel-inv_saisie .win-table th,
+#panel-inv_validation .win-table th,
+#panel-inv_historique .win-table th {
+  font-size: 10px;
+}
+
+/* ── PAGE HEADER inline style override ── */
+.page-header[style] {
+  padding: 8px 12px !important;
+  margin-bottom: 10px !important;
+  font-size: 11px !important;
+}
+
+.page-header[style] h2 { font-size: 13px !important; }
+
+/* ── ANIMATIONS ── */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.row-validated {
-    background-color: #ffeaea !important; /* Rouge très léger */
-    color: #a0a0a0;
-    transition: 0.3s;
-}
-.row-validated b, .row-validated .ecart {
-    color: #ff0000 !important; /* Texte en rouge pour signaler le travail fini */
+/* ── PRINT ── */
+@media print {
+  body * { visibility: hidden; }
+  #print-zone, #print-zone * { visibility: visible; }
+  #print-zone { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
 }
 
-#v-mouvements table {
-    border-collapse: separate;
-    border-spacing: 0;
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
 }
 
-#v-mouvements .table thead th {
-    border-top: none;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-size: 11px;
+/* =======================================
+   DEMO PREVIEW BELOW (remove in prod)
+======================================= */
+.demo-wrap { padding: 20px; }
+.demo-section { margin-bottom: 24px; }
+.demo-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
 }
-
-#v-mouvements .badge {
-    padding: 5px 10px;
-    border-radius: 4px;
-}
-
-/* Style spécifique pour la colonne "Qte Final" pour la faire ressortir comme sur ton image */
-#v-mouvements td:last-child {
-    background-color: rgba(0,0,0,0.02);
-}
-    </style>
+</style>
 </head>
 <body>
 
-    <nav class="sidebar">
-        <div class="sidebar-header" style="padding:20px; text-align:center;">
-             <h2 style="color:var(--secondary)">PharmAssist</h2>
+    <div style="width:148px; background:var(--primary); min-height:100vh; position:fixed; top:0; left:0;">
+  <div class="sidebar-header">
+    <button><i class="fas fa-bars"></i> PharmAssist</button>
+  </div>
+  <ul class="sidebar-menu">
+    <li><a href="#"><i class="fas fa-th-large"></i> Dashboard</a></li>
+    <li><a href="#"><i class="fas fa-shopping-cart"></i> Ventes</a></li>
+    <li><a href="#" class="active"><i class="fas fa-boxes"></i> Stocks</a></li>
+    <li><a href="#" style="color:#ff8585;"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+  </ul>
+</div>
+
+    <div class="content demo-wrap">
+
+          <div class="demo-section">
+            <div class="demo-label">Gestion de Stock & Traçabilité</div>
+            <div class="page-header">
+              <div>
+                <div id="breadcrumb"><i class="fas fa-home"></i> PharmAssist / <span>Stocks</span></div>
+                <h2 id="main-title">Gestion de Stock &amp; Traçabilité</h2>
+              </div>
+              <div id="status-indicator">
+                <span class="dot" style="background:#1a9e5f; border-radius:50%; display:inline-block;"></span>
+                Système Prêt
+              </div>
+            </div>
+          </div>
+
+    <!-- Stat Cards -->
+  <div class="demo-section">
+    <div class="demo-label">Stat Cards</div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Produits</div>
+          <div class="stat-val"><?= $total_p ?></div>
         </div>
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><i class="fas fa-th-large"></i> Dashboard</a></li>
-            <li><a href="ventes.php"><i class="fas fa-shopping-cart"></i> Ventes</a></li>
-            <li><a href="caisse.php"><i class="fas fa-shopping-cart"></i> Caisse</a></li>
-            <li><a href="produits_gestion.php" class="active"><i class="fas fa-boxes"></i> Stocks & Flux</a></li>
-            <li><a href="logout.php" style="color: #ff7675;"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
-        </ul>
-    </nav>
-
-    <div class="content">
-        <h1>Gestion de Stock & Traçabilité</h1>
-
-        <div class="stats-row">
-            <div class="stat-card">
-                <div><div class="stat-label">Produits</div><div class="stat-val"><?= $total_p ?></div></div>
-                <div style="color:var(--info)"><i class="fas fa-pills fa-2x"></i></div>
-            </div>
-            <div class="stat-card" style="border-left: 5px solid var(--danger)">
-                <div><div class="stat-label">Ruptures/Alertes</div><div class="stat-val" style="color:var(--danger)"><?= $ruptures ?></div></div>
-                <div style="color:var(--danger)"><i class="fas fa-exclamation-circle fa-2x"></i></div>
-            </div>
-            <div class="stat-card">
-                <div><div class="stat-label">Périmés</div><div class="stat-val"><?= $nb_perimes ?></div></div>
-                <div style="color:var(--danger)"><i class="fas fa-calendar-times fa-2x"></i></div>
-            </div>
-            <div class="stat-card">
-                <div><div class="stat-label">Proches Péremption</div><div class="stat-val"><?= $nb_proches ?></div></div>
-                <div style="color:var(--warning)"><i class="fas fa-hourglass-half fa-2x"></i></div>
-            </div>
-
+        <i class="fas fa-pills" style="color:var(--secondary);"></i>
+      </div>
+      <div class="stat-card" style="border-left:3px solid var(--danger)">
+        <div>
+          <div class="stat-label">Ruptures / Alertes</div>
+          <div class="stat-val" style="color:var(--danger)"><?= $ruptures ?></div>
         </div>
+        <i class="fas fa-exclamation-circle" style="color:var(--danger);"></i>
+      </div>
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Périmés</div>
+          <div class="stat-val"><?= $nb_perimes ?></div>
+        </div>
+        <i class="fas fa-calendar-times" style="color:var(--danger);"></i>
+      </div>
+      <div class="stat-card">
+        <div>
+          <div class="stat-label">Proches Péremption</div>
+          <div class="stat-val"><?= $nb_proches ?></div>
+        </div>
+        <i class="fas fa-hourglass-half" style="color:var(--warning);"></i>
+      </div>
+    </div>
+  </div>
 
+ <div class="demo-section">
+    <div class="demo-label">Navbar Dropdowns</div>
 <nav class="tab-navbar">
     <div class="nav-item-dropdown">
         <button class="dropbtn"><i class="fas fa-boxes"></i> Produits <i class="fas fa-caret-down"></i></button>
@@ -407,7 +1014,6 @@ $mouvements_groupes = $pdo->query("SELECT
             <a href="#" onclick="showPanel('list')"><i class="fas fa-table"></i> Catalogue</a>
             <a href="#" onclick="showPanel('nouveau-produit')"><i class="fas fa-plus"></i> Nouveau Produit</a>
             <a href="#" onclick="showPanel('maj-emplacements')"><i class="fas fa-map-marker-alt"></i> Gestion Emplacements</a>
-            <a href="#" onclick="showPanel('maj-catalogue')"><i class="fas fa-map-marker-alt"></i> Catalogue Référentiel</a>
             <a href="#" onclick="showPanel('hierarchie')"><i class="fas fa-map-marker-alt"></i>Configuration des Rayons & Classes</a>
             <a href="#" onclick="showPanel('logs')"><i class="fas fa-map-marker-alt"></i>Journal des Activités</a>
         </div>
@@ -478,7 +1084,7 @@ $countAlertes = $pdo->query("SELECT COUNT(*) FROM stocks WHERE quantite_disponib
         </div>
     </div>
 </nav>
-
+</div>
         <div class="page-header" style="background: #f8f9fa; padding: 15px 20px; border-bottom: 2px solid #dee2e6; margin-bottom: 20px;">
                 <div id="breadcrumb" style="font-size: 0.85rem; color: #6c757d; margin-bottom: 5px;">
                     <i class="fas fa-home"></i> PharmAssist / <span id="current-category">Gestion</span>
@@ -549,10 +1155,14 @@ $countAlertes = $pdo->query("SELECT COUNT(*) FROM stocks WHERE quantite_disponib
 
 <div id="panel-mouvements" class="panel">
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 text-primary"><i class="fas fa-history"></i> Flux de Stocks</h5>
+        <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 text-primary">
+                <i class="fas fa-history me-2"></i> Flux de Stocks
+            </h5>
+            <span class="badge bg-primary-subtle text-primary" id="badge-count"></span>
         </div>
         <div class="card-body">
+
             <!-- Formulaire de filtrage -->
             <form id="filter-form" class="row g-2 mb-4">
                 <div class="col-md-3">
@@ -563,24 +1173,24 @@ $countAlertes = $pdo->query("SELECT COUNT(*) FROM stocks WHERE quantite_disponib
                     <label class="small text-muted">Type</label>
                     <select name="f_type" class="form-select form-select-sm">
                         <option value="">Tous les types</option>
-                        <option value="entree_achat">ENTRÉE ACHAT</option>
+                        <option value="entree_achat">ENTREE ACHAT</option>
                         <option value="sortie_vente">SORTIE VENTE</option>
                         <option value="casse">CASSE</option>
-                        <option value="perime">PÉRIMÉ</option>
+                        <option value="perime">PERIME</option>
                         <option value="ajustement_inventaire">INVENTAIRE</option>
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="small text-muted">Période</label>
+                    <label class="small text-muted">Periode</label>
                     <div class="input-group input-group-sm">
                         <input type="date" name="f_debut" class="form-control">
                         <span class="input-group-text">au</span>
                         <input type="date" name="f_fin" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end gap-1">
+                <div class="col-md-3 d-flex align-items-end gap-1">
                     <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                        <i class="fas fa-filter"></i>
+                        <i class="fas fa-filter me-1"></i> Filtrer
                     </button>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -596,23 +1206,106 @@ $countAlertes = $pdo->query("SELECT COUNT(*) FROM stocks WHERE quantite_disponib
                 </div>
             </form>
 
+            <!-- Tableau groupé par produit -->
             <div class="table-responsive">
-                <table class="table table-hover" style="font-size: 14px;">
+                <table class="table table-hover align-middle" style="font-size: 14px;">
                     <thead class="table-light">
                         <tr>
-                            <th>Date</th>
                             <th>Produit</th>
-                            <th>Type</th>
-                            <th class="text-center">Qte Init</th>
-                            <th class="text-center">Mvt</th>
-                            <th class="text-center">Qte Fin</th>
+                            <th class="text-center">Nb Mouvements</th>
+                            <th class="text-center text-success">Total Entrees</th>
+                            <th class="text-center text-danger">Total Sorties</th>
+                            <th class="text-center">Stock Actuel</th>
+                            <th class="text-center">Dernier Mvt</th>
+                            <th class="text-center">Detail</th>
                         </tr>
                     </thead>
                     <tbody id="body-mouvements">
-                        <!-- Le contenu sera chargé ici par jQuery -->
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-filter me-2"></i>Appliquez un filtre pour charger les données.
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ====================================================
+     MODAL : Détail des mouvements d'un produit
+     ==================================================== -->
+<div class="modal fade" id="modalDetailMouvements" tabindex="-1" aria-labelledby="modalDetailLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalDetailLabel">
+                    <i class="fas fa-list-alt me-2"></i>
+                    <span id="modal-product-name">Détail des mouvements</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0">
+
+                <!-- Résumé rapide du produit -->
+                <div class="row g-0 border-bottom" id="modal-summary" style="background:#f8f9fa;">
+                    <div class="col-3 text-center py-3 border-end">
+                        <div class="small text-muted">Total Entrées</div>
+                        <div class="fw-bold text-success fs-5" id="modal-total-entrees">—</div>
+                    </div>
+                    <div class="col-3 text-center py-3 border-end">
+                        <div class="small text-muted">Total Sorties</div>
+                        <div class="fw-bold text-danger fs-5" id="modal-total-sorties">—</div>
+                    </div>
+                    <div class="col-3 text-center py-3 border-end">
+                        <div class="small text-muted">Nb Mouvements</div>
+                        <div class="fw-bold text-primary fs-5" id="modal-nb-mvt">—</div>
+                    </div>
+                    <div class="col-3 text-center py-3">
+                        <div class="small text-muted">Stock Actuel</div>
+                        <div class="fw-bold fs-5" id="modal-stock-actuel">—</div>
+                    </div>
+                </div>
+
+                <!-- Tableau des mouvements détaillés -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0" style="font-size: 13px;">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th>Date</th>
+                                <th>Lot</th>
+                                <th>Type</th>
+                                <th class="text-center">Qte Init</th>
+                                <th class="text-center">Mouvement</th>
+                                <th class="text-center">Qte Finale</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-body-detail">
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="fas fa-spinner fa-spin me-2"></i> Chargement...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <small class="text-muted me-auto" id="modal-filter-info"></small>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="modal-print-btn">
+                    <i class="fas fa-print me-1"></i> Imprimer
+                </button>
+            </div>
+
         </div>
     </div>
 </div>
@@ -876,7 +1569,7 @@ $countAlertes = $pdo->query("SELECT COUNT(*) FROM stocks WHERE quantite_disponib
         <i class="fas fa-eye fa-lg"></i>
     </button>
 
-    <?php if ($row['statut'] == 'en_attente'): ?>
+    <?php if ($row['statut'] == 'en_attente' || $row['statut'] == 'en_attente'): ?>
         <a href="generer_pdf_commande.php?id_commande=<?= $row['id_commande'] ?>" target="_blank" title="Imprimer le PDF" style="color:#0984e3; margin-right:10px;">
             <i class="fas fa-file-pdf fa-lg"></i>
         </a>
@@ -1129,23 +1822,274 @@ $countAlertes = $pdo->query("SELECT COUNT(*) FROM stocks WHERE quantite_disponib
 </div>
 
 
-     <div id="panel-historique" class="panel mt-5">
-            <h3><i class="fas fa-history"></i> 5 Dernières Factures Réceptionnées</h3>
-            <table class="win-table">
-                <thead>
-                    <tr class="table-secondary">
-                        <th>Date</th>
-                        <th>Fournisseur</th>
-                        <th>N° Facture</th>
-                        <th>Montant Total</th>
-                        <th>Statut</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="last-achats-body">
-                    </tbody>
-            </table>
+<div id="panel-historique" class="panel mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary">
+                <i class="fas fa-boxes me-2"></i> Historique des Achats par Produit
+            </h5>
+            <span class="badge bg-secondary" id="achats-count-badge">-- produits</span>
         </div>
+
+        <div class="card-body">
+
+            <!-- ── Barre de filtres principale ── -->
+            <form id="filter-achats-form" class="row g-2 mb-3">
+                <!-- Recherche live -->
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="search-produit-achats"
+                               name="f_nom" class="form-control"
+                               placeholder="Rechercher un produit...">
+                        <button type="button" class="btn btn-outline-secondary" id="clear-search-achats">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Fournisseur -->
+                <div class="col-md-3">
+                    <select name="f_fournisseur" id="f_fournisseur_achats" class="form-select form-select-sm">
+                        <option value="">Tous les fournisseurs</option>
+                        <!-- Chargé dynamiquement -->
+                    </select>
+                </div>
+
+                <!-- Période globale -->
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <input type="date" name="f_debut" id="f_debut_achats" class="form-control">
+                        <span class="input-group-text">au</span>
+                        <input type="date" name="f_fin" id="f_fin_achats" class="form-control">
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="reset-filter-achats" title="Réinitialiser">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- ── Table groupée par produit ── -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" style="font-size:13.5px;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Produit</th>
+                            <th>Fournisseur pref.</th>
+                            <th class="text-center">Nb Achats</th>
+                            <th class="text-center">Qte Totale</th>
+                            <th class="text-center">Montant Total</th>
+                            <th class="text-center">Prix Moy. Unitaire</th>
+                            <th class="text-center">Dernier Achat</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-achats-grouped">
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="fas fa-spinner fa-spin me-2"></i> Chargement...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div><!-- /card-body -->
+    </div><!-- /card -->
+</div>
+
+
+<!-- Modal Edition Ligne Achat -->
+<div class="modal fade" id="modalEditAchat" tabindex="-1" aria-labelledby="modalEditAchatLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalEditAchatLabel">
+          <i class="fas fa-edit me-2"></i>
+          Modifier les lignes d'achat — <span id="modal-produit-nom"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0">
+
+        <!-- Alerte résultat -->
+        <div id="edit-achat-alert" class="alert m-3 d-none" role="alert"></div>
+
+        <!-- Tableau des lignes -->
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle mb-0" style="font-size:13px;">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>N° Facture</th>
+                <th>Date Achat</th>
+                <th>Fournisseur</th>
+                <th class="text-center">Lot (stock)</th>
+                <th class="text-center" style="width:130px;">Qte Recue</th>
+                <th class="text-center" style="width:150px;">Prix Achat Unit.</th>
+                <th class="text-center">Peremption</th>
+                <th class="text-center" style="width:90px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="body-edit-achat-lignes">
+              <tr>
+                <td colspan="8" class="text-center py-4 text-muted">
+                  <i class="fas fa-spinner fa-spin me-1"></i> Chargement...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Légende -->
+        <div class="p-3 border-top bg-light">
+          <small class="text-muted">
+            <i class="fas fa-info-circle text-primary me-1"></i>
+            Modifier une <strong>quantite</strong> met a jour le stock disponible (difference).
+            Modifier un <strong>prix</strong> met a jour le lot stock et recalcule le montant total de la commande.
+          </small>
+        </div>
+
+      </div><!-- /modal-body -->
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i> Fermer
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL DÉTAIL ACHATS PAR PRODUIT
+============================================================ -->
+<div class="modal fade" id="modalDetailAchats" tabindex="-1" aria-labelledby="modalDetailAchatsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <!-- En-tête -->
+            <div class="modal-header bg-primary text-white">
+                <div>
+                    <h5 class="modal-title mb-0" id="modalDetailAchatsLabel">
+                        <i class="fas fa-history me-2"></i>
+                        <span id="modal-produit-nom">--</span>
+                    </h5>
+                    <small class="opacity-75" id="modal-produit-molecule"></small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- Stats rapides -->
+            <div class="modal-body pb-0">
+                <div class="row g-2 mb-3" id="modal-stats-row">
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <div class="fw-bold text-primary fs-5" id="stat-nb-factures">--</div>
+                            <div class="small text-muted">Factures</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <div class="fw-bold text-success fs-5" id="stat-qte-totale">--</div>
+                            <div class="small text-muted">Qté Totale</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <div class="fw-bold text-warning fs-5" id="stat-montant-total">--</div>
+                            <div class="small text-muted">Montant Total</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <div class="fw-bold text-info fs-5" id="stat-prix-moyen">--</div>
+                            <div class="small text-muted">Prix Moy. Unit.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtres dans le modal -->
+                <form id="modal-filter-form" class="row g-2 mb-3">
+                    <input type="hidden" id="modal-id-produit" name="id_produit" value="">
+
+                    <div class="col-md-4">
+                        <div class="input-group input-group-sm">
+                            <input type="date" name="f_debut" id="modal-f-debut" class="form-control">
+                            <span class="input-group-text">au</span>
+                            <input type="date" name="f_fin" id="modal-f-fin" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="f_statut" class="form-select form-select-sm">
+                            <option value="">Tous statuts paiement</option>
+                            <option value="paye">Payé</option>
+                            <option value="partiel">Partiel</option>
+                            <option value="impaye">Impayé</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="f_mode" class="form-select form-select-sm">
+                            <option value="">Tous modes règlement</option>
+                            <option value="especes">Espèces</option>
+                            <option value="cheque">Chèque</option>
+                            <option value="virement">Virement</option>
+                            <option value="mobile_money">Mobile Money</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-filter me-1"></i> Filtrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table détail -->
+            <div class="modal-body pt-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm align-middle" style="font-size:13px;">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date</th>
+                                <th>N° Facture</th>
+                                <th>Fournisseur</th>
+                                <th class="text-center">Qté Reçue</th>
+                                <th class="text-center">Prix Unit. Achat</th>
+                                <th class="text-center">Sous-Total</th>
+                                <th>N° Lot</th>
+                                <th>Date Péremption</th>
+                                <th class="text-center">Statut</th>
+                                <th class="text-center">Mode Règl.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body-detail-achats">
+                            <tr>
+                                <td colspan="10" class="text-center py-3">
+                                    <i class="fas fa-spinner fa-spin"></i> Chargement...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+            </div>
+
+        </div><!-- /modal-content -->
+    </div>
+</div>
 
         <div class="panel" id="panel-retours">
         <div class="row mb-3">
@@ -2670,13 +3614,13 @@ function chargerSuggestions() {
             res.data.forEach(item => {
                 let stock = parseInt(item.stock_actuel);
                 let cmj = parseFloat(item.cmj) || 0;
-                let prix = parseFloat(item.prix_unitaire) || 0; // RÉCUPÉRATION DU PRIX (selon ta BD)
+                let prix = parseFloat(item.prix_achat) || 0; // RÉCUPÉRATION DU PRIX (selon ta BD)
 
                 let styleRouge = (stock <= seuil_saisie) ? 'background-color: #ffebee; color: #d32f2f; font-weight: bold;' : '';
                 let checkboxChecked = (stock <= seuil_saisie) ? 'checked' : '';
                 
 
-                let prixAchat = parseFloat(item.prix_unitaire) || 0;
+                let prixAchat = parseFloat(item.prix_achat) || 0;
                 let suggestion = Math.max(0, parseInt(item.stock_max) - stock);
                 let sousTotalInitial = suggestion * prixAchat;
               html += `
@@ -4603,29 +5547,329 @@ async function finaliserAchat() {
 
     // 3. Envoi AJAX avec TOUS les champs du formulaire
     $.post('ajax_produits.php', {
-        action: 'valider_reception_achat',
-        id_fournisseur: $('#id_fournisseur').val(),
-        num_facture: $('#num_facture').val(),
-        date_achat: $('#date_achat').val(),
-        mode_reglement: $('#mode_reglement').val(),
-        montant_verse: $('#montant_verse').val(),
-        date_echeance: $('input[name="date_echeance"]').val(),
-        total_global: $('#grand-total').text().replace(/\s/g, ''), // On récupère le total affiché
-        methode_pa: methodeCalcul, 
-        lignes: items
-    }, function(res) {
-        if(res.status === 'success') {
+    action:          'valider_reception_achat',
+    id_fournisseur:  $('#id_fournisseur').val(),
+    num_facture:     $('#num_facture').val(),
+    date_achat:      $('#date_achat').val(),
+    mode_reglement:  $('#mode_reglement').val(),
+    montant_verse:   $('#montant_verse').val(),
+    date_echeance:   $('input[name="date_echeance"]').val(),
+    total_global:    $('#grand-total').text().replace(/\s/g, ''),
+    methode_pa:      methodeCalcul,
+    lignes:          items
+}, function(res) {
+
+    if (res.status !== 'success') {
+        Swal.fire('Erreur', res.message, 'error');
+        return;
+    }
+
+    // -------------------------------------------------------
+    // Pas de changement de prix de vente a proposer ?
+    // -> Succes direct
+    // -------------------------------------------------------
+    if (!res.produits_pa_modifie || res.produits_pa_modifie.length === 0) {
+        Swal.fire({
+            icon: 'success',
+            title:'Reception validee',
+            text: 'Le stock et les charges ont ete mis a jour.',
+            confirmButtonText: 'OK'
+        }).then(() => location.reload());
+        return;
+    }
+
+    // -------------------------------------------------------
+    // Construire la modale de revision des prix de vente
+    // -------------------------------------------------------
+    afficherModalePrixVente(res.produits_pa_modifie);
+
+}, 'json');
+
+}
+
+function afficherModalePrixVente(produits) {
+
+    // Construction des lignes du tableau
+    let lignesHtml = '';
+    produits.forEach((p, i) => {
+        const hausse = p.nouveau_pa_boite > p.ancien_pa_boite;
+        const fleche = hausse
+            ? '<span style="color:#dc2626;font-size:11px;font-weight:700;">+</span>'
+            : '<span style="color:#16a34a;font-size:11px;font-weight:700;">-</span>';
+
+        const hasDetail = p.coef > 1 && p.prix_vente_detail > 0;
+
+        lignesHtml += `
+        <div class="pvente-row" data-index="${i}" style="
+            background:#fff;
+            border:1px solid #e5e7eb;
+            border-radius:7px;
+            padding:12px 14px;
+            margin-bottom:10px;
+            font-family:'DM Sans',sans-serif;
+        ">
+            <!-- Nom produit -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#111827;">${p.nom_commercial}</div>
+                    <div style="font-size:10px;color:#9ca3af;margin-top:1px;">
+                        PA boite : 
+                        <span style="font-family:'DM Mono',monospace;color:#6b7280;text-decoration:line-through;">
+                            ${p.ancien_pa_boite.toLocaleString()} F
+                        </span>
+                        &nbsp;${fleche}&nbsp;
+                        <span style="font-family:'DM Mono',monospace;font-weight:700;color:${hausse ? '#dc2626' : '#16a34a'};">
+                            ${p.nouveau_pa_boite.toLocaleString()} F
+                        </span>
+                    </div>
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:#6b7280;">
+                    <input type="checkbox" class="chk-appliquer" data-index="${i}"
+                        checked
+                        style="width:14px;height:14px;accent-color:#1d4ed8;cursor:pointer;">
+                    Appliquer
+                </label>
+            </div>
+
+            <!-- Grille prix -->
+            <div style="display:grid;grid-template-columns:${hasDetail ? '1fr 1fr' : '1fr'};gap:10px;">
+
+                <!-- Prix vente boite -->
+                <div>
+                    <div style="font-size:9.5px;font-weight:700;color:#6b7280;text-transform:uppercase;
+                                letter-spacing:.4px;margin-bottom:4px;">
+                        Prix vente boite
+                    </div>
+                    <div style="display:flex;align-items:center;gap:5px;">
+                        <span style="font-size:10px;color:#9ca3af;font-family:'DM Mono',monospace;
+                                     text-decoration:line-through;">
+                            ${p.prix_vente_boite.toLocaleString()} F
+                        </span>
+                        <span style="color:#6b7280;font-size:10px;">-></span>
+                        <input type="number"
+                            class="in-pvente-boite"
+                            data-index="${i}"
+                            value="${p.prix_vente_suggere_boite}"
+                            style="flex:1;padding:5px 7px;border:1px solid #d1d5db;border-radius:5px;
+                                   font-family:'DM Mono',monospace;font-size:12px;font-weight:700;
+                                   color:#111827;outline:none;width:100%;
+                                   background:#f0fdf4;border-color:#86efac;">
+                        <span style="font-size:11px;color:#6b7280;flex-shrink:0;">F</span>
+                    </div>
+                    <!-- Indicateur marge -->
+                    <div class="marge-indicator-boite" data-index="${i}"
+                        style="font-size:9.5px;color:#16a34a;margin-top:3px;font-family:'DM Mono',monospace;">
+                        ${calculerMargeLabel(p.prix_vente_suggere_boite, p.nouveau_pa_boite)}
+                    </div>
+                </div>
+
+                <!-- Prix vente detail -->
+                ${hasDetail ? `
+                <div>
+                    <div style="font-size:9.5px;font-weight:700;color:#6b7280;text-transform:uppercase;
+                                letter-spacing:.4px;margin-bottom:4px;">
+                        Prix vente detail
+                    </div>
+                    <div style="display:flex;align-items:center;gap:5px;">
+                        <span style="font-size:10px;color:#9ca3af;font-family:'DM Mono',monospace;
+                                     text-decoration:line-through;">
+                            ${p.prix_vente_detail.toLocaleString()} F
+                        </span>
+                        <span style="color:#6b7280;font-size:10px;">-></span>
+                        <input type="number"
+                            class="in-pvente-detail"
+                            data-index="${i}"
+                            value="${p.prix_vente_suggere_detail}"
+                            style="flex:1;padding:5px 7px;border:1px solid #d1d5db;border-radius:5px;
+                                   font-family:'DM Mono',monospace;font-size:12px;font-weight:700;
+                                   color:#111827;outline:none;width:100%;
+                                   background:#f0fdf4;border-color:#86efac;">
+                        <span style="font-size:11px;color:#6b7280;flex-shrink:0;">F</span>
+                    </div>
+                    <div class="marge-indicator-detail" data-index="${i}"
+                        style="font-size:9.5px;color:#16a34a;margin-top:3px;font-family:'DM Mono',monospace;">
+                        ${p.prix_vente_suggere_detail > 0
+                            ? calculerMargeDetailLabel(p.prix_vente_suggere_detail, p.nouveau_pa_boite, p.coef)
+                            : ''}
+                    </div>
+                </div>` : ''}
+            </div>
+        </div>`;
+    });
+
+    Swal.fire({
+        html: `
+            <div style="font-family:'DM Sans',sans-serif; text-align:left;">
+
+                <!-- Header alerte -->
+                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;
+                            padding:12px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
+                    <div style="background:#fef3c7;width:32px;height:32px;border-radius:6px;
+                                display:flex;align-items:center;justify-content:center;
+                                flex-shrink:0;font-size:15px;color:#d97706;">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:2px;">
+                            Revision des prix de vente
+                        </div>
+                        <div style="font-size:11px;color:#b45309;line-height:1.45;">
+                            Le prix d'achat de <strong>${produits.length} produit(s)</strong>
+                            a change. Verifiez et ajustez vos prix de vente ci-dessous.
+                            Les valeurs suggerees conservent votre marge actuelle.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lignes produits -->
+                <div id="pvente-list" style="max-height:360px;overflow-y:auto;
+                                             padding-right:4px;margin-bottom:4px;">
+                    ${lignesHtml}
+                </div>
+            </div>`,
+        width: 600,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-check" style="margin-right:5px;"></i> Mettre a jour les prix',
+        cancelButtonText: 'Ignorer, terminer quand meme',
+        confirmButtonColor: '#1d4ed8',
+        cancelButtonColor: '#6b7280',
+        focusConfirm: false,
+
+        didOpen: () => {
+
+            // Listener : mise a jour indicateur marge en temps reel
+            $(document).on('input.pvente', '.in-pvente-boite', function() {
+                const idx  = $(this).data('index');
+                const pv   = parseFloat($(this).val()) || 0;
+                const pa   = produits[idx].nouveau_pa_boite;
+                $(`.marge-indicator-boite[data-index="${idx}"]`)
+                    .html(calculerMargeLabel(pv, pa));
+            });
+
+            $(document).on('input.pvente', '.in-pvente-detail', function() {
+                const idx  = $(this).data('index');
+                const pv   = parseFloat($(this).val()) || 0;
+                const pa   = produits[idx].nouveau_pa_boite;
+                const coef = produits[idx].coef;
+                $(`.marge-indicator-detail[data-index="${idx}"]`)
+                    .html(calculerMargeDetailLabel(pv, pa, coef));
+            });
+
+            // Listener : checkbox desactive/grise la ligne
+            $(document).on('change.pvente', '.chk-appliquer', function() {
+                const idx     = $(this).data('index');
+                const checked = $(this).is(':checked');
+                const row     = $(`.pvente-row[data-index="${idx}"]`);
+                row.css('opacity', checked ? '1' : '0.45');
+                row.find('input[type="number"]').prop('disabled', !checked);
+            });
+        },
+
+        willClose: () => {
+            $(document).off('input.pvente change.pvente');
+        },
+
+        preConfirm: () => {
+            const lignesMAJ = [];
+
+            produits.forEach((p, i) => {
+                const checked = $(`.chk-appliquer[data-index="${i}"]`).is(':checked');
+                if (!checked) return;
+
+                const pvBoite  = parseFloat($(`.in-pvente-boite[data-index="${i}"]`).val())  || 0;
+                const pvDetail = parseFloat($(`.in-pvente-detail[data-index="${i}"]`).val()) || 0;
+
+                if (pvBoite <= 0) {
+                    Swal.showValidationMessage(
+                        `Prix de vente invalide pour : ${p.nom_commercial}`
+                    );
+                    return false;
+                }
+
+                // Avertissement marge negative
+                if (pvBoite < p.nouveau_pa_boite) {
+                    Swal.showValidationMessage(
+                        `Attention : le prix de vente de "${p.nom_commercial}" (${pvBoite} F) est inferieur au prix d'achat (${p.nouveau_pa_boite} F) !`
+                    );
+                    return false;
+                }
+
+                lignesMAJ.push({
+                    id_produit:       p.id_produit,
+                    prix_vente_boite:  pvBoite,
+                    prix_vente_detail: pvDetail
+                });
+            });
+
+            return lignesMAJ;
+        }
+
+    }).then(result => {
+
+        // Ignorer
+        if (result.isDismissed) {
             Swal.fire({
                 icon: 'success',
-                title: 'Réception validée',
-                text: 'Le stock et les charges ont été mis à jour.',
-                confirmButtonText: 'OK'
+                title:'Reception validee',
+                text: 'Les prix de vente n\'ont pas ete modifies.',
+                timer: 2000,
+                showConfirmButton: false
             }).then(() => location.reload());
-        } else {
-            Swal.fire('Erreur', res.message, 'error');
+            return;
         }
-    }, 'json');
+
+        const lignesMAJ = result.value;
+
+        // Aucune ligne cochee
+        if (!lignesMAJ || lignesMAJ.length === 0) {
+            location.reload();
+            return;
+        }
+
+        // Envoi AJAX mise a jour prix de vente
+        $.post('ajax_produits.php', {
+            action: 'maj_prix_vente',
+            lignes: lignesMAJ
+        }, function(res2) {
+            if (res2.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+
+                    html: `
+                        <div style="font-size:12px;color:#374151;line-height:1.6;">
+                            Reception enregistree <strong>et</strong>
+                            prix de vente mis a jour pour
+                            <strong>${lignesMAJ.length} produit(s)</strong>.
+                        </div>`,
+                    confirmButtonText: 'Parfait',
+                    confirmButtonColor: '#16a34a'
+                }).then(() => location.reload());
+            } else {
+                Swal.fire('Erreur MAJ prix', res2.message, 'error');
+            }
+        }, 'json');
+    });
 }
+
+function calculerMargeLabel(pvBoite, paBoite) {
+    if (!pvBoite || !paBoite || paBoite <= 0) return '';
+    const marge   = ((pvBoite - paBoite) / paBoite * 100).toFixed(1);
+    const couleur = marge < 0 ? '#dc2626' : marge < 15 ? '#d97706' : '#16a34a';
+    const icone   = marge < 0 ? 'fa-arrow-down' : 'fa-arrow-up';
+    return `<i class="fas ${icone}" style="margin-right:2px;"></i>
+            Marge boite : <span style="color:${couleur};font-weight:700;">${marge}%</span>`;
+}
+
+function calculerMargeDetailLabel(pvDetail, paBoite, coef) {
+    if (!pvDetail || !paBoite || !coef || paBoite <= 0) return '';
+    const paDetail = paBoite / coef;
+    const marge    = ((pvDetail - paDetail) / paDetail * 100).toFixed(1);
+    const couleur  = marge < 0 ? '#dc2626' : marge < 15 ? '#d97706' : '#16a34a';
+    const icone    = marge < 0 ? 'fa-arrow-down' : 'fa-arrow-up';
+    return `<i class="fas ${icone}" style="margin-right:2px;"></i>
+            Marge detail : <span style="color:${couleur};font-weight:700;">${marge}%</span>`;
+}
+
 
 function gererTypePaiement() {
     const mode = $('#mode_reglement').val();
@@ -5063,25 +6307,321 @@ function transformerEnReception() {
     </script>
 
     <script>
+
+      function htmlEsc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function kpiCell(label, value, color, icon) {
+    return `
+    <div style="padding:14px 16px;border-right:1px solid #e2e8f0;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:4px;">
+            <i class="fas ${icon}" style="margin-right:3px;color:${color};"></i>${label}
+        </div>
+        <div style="font-size:16px;font-weight:800;color:${color};">${value}</div>
+    </div>`;
+}
+      
 function voirDetailsCommande(id) {
+
+    // Ouvrir le modal immédiatement avec un skeleton loader
     Swal.fire({
-        title: 'Détails Commande #' + id,
-        html: '<div id="details_content" style="min-height:100px;">Chargement...</div>',
-        width: '600px',
-        didOpen: () => {
-            // NOTE : On ne précise PAS 'json' ici car PHP renvoie du HTML
-            $.post('ajax_produits.php', { 
-                action: 'get_details_commande', 
-                id: id, 
-                 dataType: 'json',
-            }, function(res) {
-                // Si on arrive ici, res contient ton tableau HTML
-                $('#details_content').html(res.data);
-            }).fail(function(xhr) {
-                // Si vraiment ça échoue (Erreur 500, 404, etc.)
-                console.error("Erreur réelle :", xhr.responseText);
-                $('#details_content').html('<p style="color:red;">Erreur lors de la récupération des données.</p>');
+        title: '',
+        html: `
+        <div id="cmd-modal-root" style="font-family:'Segoe UI',sans-serif;text-align:left;">
+
+            <!-- EN-TETE SKELETON -->
+            <div style="background:#f8fafc;border-radius:10px;padding:16px;margin-bottom:16px;animation:pulse 1.5s infinite;">
+                <div style="height:14px;background:#e2e8f0;border-radius:4px;width:60%;margin-bottom:8px;"></div>
+                <div style="height:10px;background:#e2e8f0;border-radius:4px;width:40%;"></div>
+            </div>
+            <div style="height:160px;background:#f8fafc;border-radius:10px;animation:pulse 1.5s infinite;"></div>
+
+            <style>
+                @keyframes pulse {
+                    0%,100%{opacity:1} 50%{opacity:.5}
+                }
+            </style>
+        </div>`,
+        width          : '780px',
+        padding        : '0',
+        showConfirmButton: false,
+        showCloseButton: true,
+        customClass    : { popup: 'swal-details-commande' }
+    });
+
+    // Requête AJAX
+    $.ajax({
+        url      : 'ajax_produits.php',
+        type     : 'POST',
+        dataType : 'json',
+        data     : { action: 'get_details_commande_full', id: id },
+        success  : function(res) {
+            if (!res.success) {
+                $('#cmd-modal-root').html(
+                    `<div style="text-align:center;padding:30px;color:#dc2626;">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <p style="margin-top:10px;">${res.message}</p>
+                    </div>`
+                );
+                return;
+            }
+
+            const c      = res.commande;
+            const lignes = res.lignes;
+
+            // ── Couleurs statut ──
+            const statutConfig = {
+                'en_attente' : { bg: '#fff7ed', color: '#c2410c', label: 'EN ATTENTE',  icon: 'fa-clock'         },
+                'livree'     : { bg: '#f0fdf4', color: '#15803d', label: 'LIVREE',       icon: 'fa-check-double'  },
+                'terminee'   : { bg: '#f0fdf4', color: '#15803d', label: 'TERMINEE',     icon: 'fa-check-double'  },
+                'annulee'    : { bg: '#fff1f2', color: '#be123c', label: 'ANNULEE',      icon: 'fa-ban'           },
+                'partielle'  : { bg: '#eff6ff', color: '#1d4ed8', label: 'PARTIELLE',    icon: 'fa-hourglass-half'},
+            };
+            const sc = statutConfig[c.statut] || { bg:'#f1f5f9', color:'#475569', label: c.statut.toUpperCase(), icon:'fa-circle' };
+
+            // ── Calculs globaux ──
+            let totalCmd    = 0;
+            let totalRecu   = 0;
+            let totalEcart  = 0;
+            let nbManquants = 0;
+            let nbExces     = 0;
+            let nbConforme  = 0;
+
+            lignes.forEach(l => {
+                const qCmd   = parseFloat(l.quantite_commandee) || 0;
+                const qRecu  = parseFloat(l.quantite_recue)     || 0;
+                const paRef  = parseFloat(l.pa_reference)       || 0;
+                totalCmd   += qCmd * paRef;
+                totalRecu  += qRecu * paRef;
+                if (qRecu === 0 && qCmd > 0) nbManquants++;
+                else if (qRecu > qCmd)        nbExces++;
+                else if (qRecu === qCmd)      nbConforme++;
+                totalEcart += (qRecu - qCmd);
             });
+
+            const tauxReception = totalCmd > 0 ? Math.min(100, (totalRecu / totalCmd) * 100).toFixed(0) : 0;
+            const barColor      = tauxReception >= 100 ? '#16a34a' : (tauxReception >= 50 ? '#d97706' : '#dc2626');
+
+            // ── Lignes produits ──
+            let lignesHtml = '';
+            lignes.forEach((l, idx) => {
+                const qCmd   = parseFloat(l.quantite_commandee) || 0;
+                const qRecu  = parseFloat(l.quantite_recue)     || 0;
+                const paRef  = parseFloat(l.pa_reference)       || 0;
+                const diff   = qRecu - qCmd;
+                const pctRec = qCmd > 0 ? ((qRecu / qCmd) * 100).toFixed(0) : 0;
+
+                // Badge état ligne
+                let ligneBadge = '';
+                let ligneBg    = '';
+                if (l.reception_faite && qRecu === 0) {
+                    ligneBadge = `<span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;">NON RECU</span>`;
+                    ligneBg = 'background:#fff5f5;';
+                } else if (l.reception_faite && diff > 0) {
+                    ligneBadge = `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;">EXCES +${diff}</span>`;
+                    ligneBg = 'background:#f0f7ff;';
+                } else if (l.reception_faite && diff < 0) {
+                    ligneBadge = `<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;">MANQUE ${diff}</span>`;
+                    ligneBg = 'background:#fffbeb;';
+                } else if (l.reception_faite) {
+                    ligneBadge = `<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;">OK</span>`;
+                }
+
+                // Mini barre progression réception
+                const barW = Math.min(100, pctRec);
+                const barC = barW >= 100 ? '#16a34a' : (barW > 0 ? '#f59e0b' : '#e5e7eb');
+
+                const sousTotalCmd = (qCmd * paRef);
+
+                lignesHtml += `
+                <tr style="border-bottom:1px solid #f1f5f9;${ligneBg}transition:background .15s;">
+                    <td style="padding:10px 8px;">
+                        <div style="font-weight:600;font-size:13px;color:#0f172a;">${htmlEsc(l.nom_commercial)}</div>
+                        ${l.molecule ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${htmlEsc(l.molecule)}</div>` : ''}
+                        ${l.numero_lot ? `<div style="font-size:10px;color:#64748b;margin-top:2px;">Lot : <strong>${htmlEsc(l.numero_lot)}</strong></div>` : ''}
+                        ${l.date_peremption ? `<div style="font-size:10px;color:#64748b;">Peremp. : ${l.date_peremption_fmt}</div>` : ''}
+                    </td>
+                    <td style="padding:10px 8px;text-align:center;font-weight:700;font-size:14px;color:#0f172a;">
+                        ${qCmd}
+                    </td>
+                    <td style="padding:10px 8px;text-align:center;">
+                        ${l.reception_faite
+                            ? `<span style="font-weight:700;font-size:14px;color:${diff < 0 ? '#d97706' : (diff > 0 ? '#2563eb' : '#16a34a')};">${qRecu}</span>`
+                            : `<span style="color:#94a3b8;font-size:12px;">—</span>`
+                        }
+                    </td>
+                    <td style="padding:10px 8px;text-align:center;">
+                        ${ligneBadge}
+                        ${l.reception_faite ? `
+                        <div style="margin-top:5px;">
+                            <div style="background:#e9ecef;border-radius:4px;height:4px;overflow:hidden;width:60px;margin:auto;">
+                                <div style="width:${barW}%;background:${barC};height:4px;"></div>
+                            </div>
+                            <div style="font-size:9px;color:#94a3b8;margin-top:2px;">${pctRec}%</div>
+                        </div>` : ''}
+                    </td>
+                    <td style="padding:10px 8px;text-align:right;font-size:12px;color:#475569;">
+                        ${paRef > 0 ? paRef.toLocaleString('fr-FR') + ' F' : '<span style="color:#cbd5e1">—</span>'}
+                    </td>
+                    <td style="padding:10px 8px;text-align:right;font-weight:600;font-size:13px;color:#0f172a;">
+                        ${sousTotalCmd > 0 ? sousTotalCmd.toLocaleString('fr-FR') + ' F' : '<span style="color:#cbd5e1">—</span>'}
+                    </td>
+                </tr>`;
+            });
+
+            // ── HTML final du modal ──
+            const html = `
+            <div id="cmd-modal-root" style="font-family:'Segoe UI',system-ui,sans-serif;text-align:left;">
+                <style>
+                    .cmd-modal-root tr:hover td { background:rgba(9,132,227,.04) !important; }
+                </style>
+
+                <!-- ══ HEADER ══ -->
+                <div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);
+                            padding:20px 24px;color:#fff;margin:-1px -1px 0;border-radius:8px 8px 0 0;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+                        <div>
+                            <div style="font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">
+                                Bon de Commande
+                            </div>
+                            <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                                #${String(c.id_commande).padStart(5,'0')}
+                            </div>
+                            <div style="margin-top:6px;font-size:13px;opacity:.8;">
+                                <i class="fas fa-calendar-alt" style="margin-right:5px;"></i>${c.date_commande_fmt}
+                                &nbsp;&nbsp;
+                                <i class="fas fa-user" style="margin-right:5px;"></i>${htmlEsc(c.nom_caissier || 'N/A')}
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="background:${sc.bg};color:${sc.color};
+                                        border-radius:99px;padding:5px 14px;
+                                        font-size:12px;font-weight:700;display:inline-block;">
+                                <i class="fas ${sc.icon}" style="margin-right:5px;"></i>${sc.label}
+                            </div>
+                            <div style="margin-top:10px;font-size:12px;opacity:.7;">
+                                <i class="fas fa-building" style="margin-right:4px;"></i>${htmlEsc(c.nom_fournisseur || 'N/A')}
+                            </div>
+                            ${c.telephone_fournisseur
+                                ? `<div style="font-size:11px;opacity:.6;margin-top:3px;">
+                                    <i class="fas fa-phone" style="margin-right:4px;"></i>${htmlEsc(c.telephone_fournisseur)}</div>`
+                                : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ KPI BAR ══ -->
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #e2e8f0;">
+                    ${kpiCell('Produits', lignes.length, '#0f172a', 'fa-boxes')}
+                    ${kpiCell('Conforme(s)', nbConforme, '#16a34a', 'fa-check-circle')}
+                    ${kpiCell('Manquant(s)', nbManquants, '#dc2626', 'fa-exclamation-triangle')}
+                    ${kpiCell('Total estimé', totalCmd.toLocaleString('fr-FR') + ' F', '#0984e3', 'fa-money-bill-wave')}
+                </div>
+
+                <!-- ══ BARRE TAUX DE RECEPTION ══ -->
+                ${c.reception_faite ? `
+                <div style="padding:12px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;">
+                            Taux de réception
+                        </span>
+                        <span style="font-size:14px;font-weight:800;color:${barColor};">${tauxReception}%</span>
+                    </div>
+                    <div style="background:#e9ecef;border-radius:99px;height:8px;overflow:hidden;">
+                        <div style="width:${tauxReception}%;background:${barColor};height:8px;border-radius:99px;
+                                    transition:width .6s ease;"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#94a3b8;">
+                        <span>Valeur commandée : ${totalCmd.toLocaleString('fr-FR')} FCFA</span>
+                        <span>Valeur reçue : ${totalRecu.toLocaleString('fr-FR')} FCFA</span>
+                    </div>
+                </div>` : ''}
+
+                <!-- ══ TABLE LIGNES ══ -->
+                <div style="max-height:340px;overflow-y:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;" class="cmd-modal-root">
+                        <thead>
+                            <tr style="background:#f8fafc;position:sticky;top:0;z-index:2;border-bottom:2px solid #e2e8f0;">
+                                <th style="padding:10px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:700;">Produit</th>
+                                <th style="padding:10px 8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:700;">Qte Cmd</th>
+                                <th style="padding:10px 8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:700;">Qte Reçue</th>
+                                <th style="padding:10px 8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:700;">Etat</th>
+                                <th style="padding:10px 8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:700;">PA Ref</th>
+                                <th style="padding:10px 8px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:700;">Sous-Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${lignesHtml}</tbody>
+                        <tfoot>
+                            <tr style="background:#f8fafc;border-top:2px solid #0f172a;">
+                                <td colspan="5" style="padding:12px 8px;text-align:right;font-weight:800;font-size:13px;color:#0f172a;">
+                                    TOTAL ESTIME :
+                                </td>
+                                <td style="padding:12px 8px;text-align:right;font-weight:800;font-size:15px;color:#0984e3;">
+                                    ${totalCmd.toLocaleString('fr-FR')} FCFA
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- ══ PIED DU MODAL : ACTIONS ══ -->
+                <div style="padding:14px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;
+                            display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+                            border-radius:0 0 8px 8px;">
+                    <div style="font-size:11px;color:#94a3b8;">
+                        <i class="fas fa-info-circle" style="margin-right:4px;"></i>
+                        Créée le ${c.date_commande_fmt} — Référence interne #${c.id_commande}
+                        ${c.date_reception ? ` — Reçue le ${c.date_reception_fmt}` : ''}
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        ${c.statut === 'en_attente' ? `
+                        <button onclick="Swal.close();ouvrirReception(${c.id_commande});"
+                            style="background:#16a34a;color:#fff;border:none;border-radius:6px;
+                                   padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;">
+                            <i class="fas fa-truck" style="margin-right:5px;"></i>Receptionner
+                        </button>
+                        <a href="generer_pdf_commande.php?id_commande=${c.id_commande}" target="_blank"
+                            style="background:#0984e3;color:#fff;border-radius:6px;
+                                   padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;
+                                   text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                            <i class="fas fa-file-pdf"></i>PDF
+                        </a>
+                        <button onclick="Swal.close();annulerCommande(${c.id_commande});"
+                            style="background:#dc2626;color:#fff;border:none;border-radius:6px;
+                                   padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;">
+                            <i class="fas fa-times-circle" style="margin-right:5px;"></i>Annuler
+                        </button>` : ''}
+                        ${c.statut === 'terminee' || c.statut === 'livree' ? `
+                        <a href="generer_pdf_commande.php?id_commande=${c.id_commande}" target="_blank"
+                            style="background:#0984e3;color:#fff;border-radius:6px;
+                                   padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;
+                                   text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                            <i class="fas fa-file-pdf"></i>PDF
+                        </a>` : ''}
+                        <button onclick="Swal.close();"
+                            style="background:#f1f5f9;color:#64748b;border:none;border-radius:6px;
+                                   padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+
+            </div>`;
+
+            // Injecter dans le modal déjà ouvert
+            Swal.update({ html: html });
+        },
+        error: function() {
+            $('#cmd-modal-root').html(
+                `<div style="text-align:center;padding:30px;color:#dc2626;">
+                    <i class="fas fa-plug fa-2x"></i>
+                    <p style="margin-top:10px;">Erreur de connexion au serveur.</p>
+                </div>`
+            );
         }
     });
 }
@@ -5244,17 +6784,20 @@ function chargerDonneesReception(id) {
     }, function(res) {
         let html = '';
         res.forEach(function(ligne) {
-            let pa = parseFloat(ligne.prix_unitaire) || 0;
-            let totalLigne = pa * ligne.quantite_commandee;
+            let pa = parseFloat(ligne.prix_achat) || 0;
+            let coef = parseFloat(ligne.coefficient_division) || 1; // Assurez-vous d'avoir le coefficient ici
+            let totalLigne = pa * ligne.quantite_commandee; // Ajustez le total selon le coefficient
 
             html += `
             <tr class="ligne-stock" data-id-p="${ligne.id_produit}" style="border-bottom:1px solid #ddd;">
                 <td style="padding:10px;">${ligne.nom_commercial}</td>
                 <td style="padding:10px; text-align:center;">
-                    <input type="number" class="pa_r" value="${pa}" style="width:80px; padding:5px; border:1px solid #27ae60;" oninput="recalculerTotalReception(this)">
+                    <input type="number" class="pa_r" value="${pa}" style="width:80px; padding:5px; border:1px solid #27ae60;" 
+                        oninput="recalculerTotalReception(this)">
                 </td>
                 <td style="padding:10px; text-align:center;">
-                    <input type="number" class="qte_r" value="${ligne.quantite_commandee}" style="width:70px; padding:5px;" oninput="recalculerTotalReception(this)">
+                    <input type="number" class="qte_r" value="${ligne.quantite_commandee}" style="width:70px; padding:5px;" 
+                        oninput="recalculerTotalReception(this)">
                 </td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">
                     <span class="sous_total_r">${totalLigne.toLocaleString()}</span> F
@@ -5275,80 +6818,448 @@ function recalculerTotalReception(element) {
     let tr = $(element).closest('tr');
     let pa = parseFloat(tr.find('.pa_r').val()) || 0;
     let qte = parseInt(tr.find('.qte_r').val()) || 0;
-    let total = pa * qte;
-    
+    let coef = parseFloat(tr.data('coef')) || 1; // Récupérer le coefficient de division
+    let total = (pa * qte) / coef; // Calculer le sous-total
+
     tr.find('.sous_total_r').text(total.toLocaleString());
+    calculerSommeTouteLaReception(); // Recalculer le total global ici
 }
 
 function calculerSommeTouteLaReception() {
     let grandTotal = 0;
-    
+
     $('.ligne-stock').each(function() {
         let pa = parseFloat($(this).find('.pa_r').val()) || 0;
         let qte = parseInt($(this).find('.qte_r').val()) || 0;
-        grandTotal += (pa * qte);
+        let coef = parseFloat($(this).data('coef')) || 1; // Assurez-vous de récupérer le coefficient
+        grandTotal += (pa * qte) / coef; // Inclure le coefficient dans le grand total
     });
-    
+
     $('#total_global_reception').text(grandTotal.toLocaleString());
 }
 
 
-function validerStock() {
-    let lignes = [];
-    let id_commande = $('#num_commande_reception').text().replace('#', '');
+async function validerStock() {
 
-    // On récupère les données saisies dans le tableau de réception
+    const id_commande = $('#num_commande_reception').text().replace('#', '').trim();
+    if (!id_commande) {
+        Swal.fire('Erreur', 'Aucune commande sélectionnée.', 'error');
+        return;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ETAPE 1 — Collecter les données saisies dans le formulaire
+    // ──────────────────────────────────────────────────────────────
+    let lignesSaisies = [];
+
     $('.ligne-stock').each(function() {
-        lignes.push({
-            id_p: $(this).data('id-p'),
-            qte_r: $(this).find('.qte_r').val(),
-            pa_r: $(this).find('.pa_r').val(), // Nouveau PA saisi (celui de la facture)
-            lot: $(this).find('.lot_r').val(),
-            peremp: $(this).find('.date_p_r').val()
+        const $row = $(this);
+        lignesSaisies.push({
+            id_produit  : parseInt($row.data('id-p'))          || 0,
+            nom_produit : $row.data('nom-produit')             || 'Produit',
+            qte_recue   : parseFloat($row.find('.qte_r').val()) || 0,
+            pa_saisi    : parseFloat($row.find('.pa_r').val())  || 0,
+            lot         : $row.find('.lot_r').val()             || '',
+            peremption  : $row.find('.date_p_r').val()          || ''
         });
     });
 
-    if (lignes.length === 0) return;
+    if (lignesSaisies.length === 0) {
+        Swal.fire('Attention', 'Aucune ligne à valider.', 'warning');
+        return;
+    }
 
-    // FENÊTRE DE CHOIX STRATÉGIQUE
-    Swal.fire({
-        title: 'Mise à jour des Prix d\'Achat',
-        html: `Le prix de certains produits a changé. Que voulez-vous faire ?<br><br>
-               <b>Remplacer :</b> Le nouveau prix écrase l'ancien.<br>
-               <b>PMP :</b> Calcule la moyenne entre le stock actuel et l'arrivage.`,
-        icon: 'warning',
-        showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonText: '<i class="fas fa-exchange-alt"></i> Remplacer',
-        denyButtonText: '<i class="fas fa-calculator"></i> Utiliser le PMP',
-        cancelButtonText: 'Annuler',
-        confirmButtonColor: '#d33', // Rouge pour remplacement direct
-        denyButtonColor: '#27ae60'   // Vert pour le calcul intelligent
-    }).then((result) => {
-        let mode_prix = '';
+    // ──────────────────────────────────────────────────────────────
+    // ETAPE 2 — Charger le bon de commande original pour comparaison
+    // ──────────────────────────────────────────────────────────────
+    let bonOriginal;
+    try {
+        bonOriginal = await $.post('get_commande_originale.php',
+            { id_commande }, null, 'json');
+    } catch (e) {
+        Swal.fire('Erreur', 'Impossible de charger le bon de commande.', 'error');
+        return;
+    }
 
-        if (result.isConfirmed) {
-            mode_prix = 'remplacer';
-        } else if (result.isDenied) {
-            mode_prix = 'pmp';
-        } else {
-            return; // Annulation
+    if (!bonOriginal.success) {
+        Swal.fire('Erreur', bonOriginal.message, 'error');
+        return;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ETAPE 3 — Analyser les écarts (quantité + prix)
+    // ──────────────────────────────────────────────────────────────
+    const originalMap = {};
+    bonOriginal.lignes.forEach(l => {
+        originalMap[l.id_produit] = l;
+    });
+
+    let ecarts              = [];
+    let aPrixModifie        = false;
+    let aQteModifiee        = false;
+    let aProduitManquant    = false;
+    let methodeCalcul       = 'remplacer';
+
+    lignesSaisies.forEach(ligne => {
+        const orig = originalMap[ligne.id_produit];
+        if (!orig) return;
+
+        const diffQte  = ligne.qte_recue - parseFloat(orig.quantite_commandee);
+        const diffPrix = ligne.pa_saisi  - parseFloat(orig.pa_reference);
+        const pctPrix  = orig.pa_reference > 0
+            ? ((diffPrix / orig.pa_reference) * 100).toFixed(1)
+            : 0;
+
+        const hasEcartQte  = Math.abs(diffQte)  > 0.001;
+        const hasEcartPrix = Math.abs(diffPrix) > 0.1;
+
+        if (hasEcartQte)  { aQteModifiee  = true; }
+        if (hasEcartPrix) { aPrixModifie  = true; }
+        if (ligne.qte_recue === 0) { aProduitManquant = true; }
+
+        if (hasEcartQte || hasEcartPrix) {
+            ecarts.push({
+                nom        : ligne.nom_produit,
+                qte_cmd    : parseFloat(orig.quantite_commandee),
+                qte_recue  : ligne.qte_recue,
+                diff_qte   : diffQte,
+                pa_orig    : parseFloat(orig.pa_reference),
+                pa_saisi   : ligne.pa_saisi,
+                diff_prix  : diffPrix,
+                pct_prix   : pctPrix,
+                has_qte    : hasEcartQte,
+                has_prix   : hasEcartPrix
+            });
         }
+    });
 
-        // Envoi au serveur avec le mode choisi
-        $.post('ajax_produits.php', {
-            action: 'valider_reception_finale',
-            id_commande: id_commande,
-            mode_prix: mode_prix,
-            lignes: lignes
-        }, function(res) {
-            if(res.status === 'success') {
-                Swal.fire('Terminé', 'Stock mis à jour et prix actualisés.', 'success')
-                .then(() => location.reload());
+    // ──────────────────────────────────────────────────────────────
+    // ETAPE 4 — Si des écarts existent, afficher la modale de diff
+    // ──────────────────────────────────────────────────────────────
+    if (ecarts.length > 0) {
+
+        // Construire le tableau HTML des écarts
+        let lignesHtml = ecarts.map(e => {
+            let qteHtml = '';
+            let prixHtml = '';
+
+            if (e.has_qte) {
+                const sens    = e.diff_qte > 0 ? '+' : '';
+                const couleur = e.diff_qte > 0 ? '#16a34a' : (e.qte_recue === 0 ? '#dc2626' : '#d97706');
+                const icone   = e.diff_qte > 0 ? 'up' : 'down';
+                qteHtml = `
+                    <div style="font-size:13px;">
+                        <span style="color:#64748b;">${e.qte_cmd}</span>
+                        <span style="margin:0 6px;color:#94a3b8;">-&gt;</span>
+                        <strong style="color:${couleur};">${e.qte_recue}</strong>
+                        <small style="color:${couleur};margin-left:4px;">(${sens}${e.diff_qte})</small>
+                    </div>`;
             } else {
-                Swal.fire('Erreur', res.message, 'error');
+                qteHtml = `<span style="color:#94a3b8;font-size:12px;">${e.qte_cmd} -- OK</span>`;
             }
-        }, 'json');
+
+            if (e.has_prix) {
+                const couleur = e.diff_prix > 0 ? '#dc2626' : '#16a34a';
+                const sens    = e.diff_prix > 0 ? '+' : '';
+                prixHtml = `
+                    <div style="font-size:13px;">
+                        <span style="color:#64748b;">${e.pa_orig.toLocaleString('fr-FR')} F</span>
+                        <span style="margin:0 6px;color:#94a3b8;">-&gt;</span>
+                        <strong style="color:${couleur};">${e.pa_saisi.toLocaleString('fr-FR')} F</strong>
+                        <small style="color:${couleur};margin-left:4px;">(${sens}${e.pct_prix}%)</small>
+                    </div>`;
+            } else {
+                prixHtml = `<span style="color:#94a3b8;font-size:12px;">${e.pa_saisi.toLocaleString('fr-FR')} F -- OK</span>`;
+            }
+
+            const bgRow = e.qte_recue === 0 ? '#fff1f2' : (e.has_prix ? '#fffbeb' : '#f0fdf4');
+
+            return `
+            <tr style="background:${bgRow};border-bottom:1px solid #e2e8f0;">
+                <td style="padding:8px 10px;font-weight:600;font-size:13px;max-width:160px;">${e.nom}</td>
+                <td style="padding:8px 10px;text-align:center;">${qteHtml}</td>
+                <td style="padding:8px 10px;text-align:center;">${prixHtml}</td>
+            </tr>`;
+        }).join('');
+
+        // Badges résumé
+        const badgeQte   = aQteModifiee     ? `<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;margin:2px;">Quantites modifiees</span>` : '';
+        const badgePrix  = aPrixModifie     ? `<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;margin:2px;">Prix modifies</span>` : '';
+        const badgeManq  = aProduitManquant ? `<span style="background:#fce7f3;color:#9d174d;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;margin:2px;">Produit(s) non recu(s)</span>` : '';
+
+        const diffHtml = `
+        <div style="font-family:'DM Sans',sans-serif;">
+            <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                ${badgeQte}${badgePrix}${badgeManq}
+            </div>
+            <p style="font-size:12px;color:#64748b;margin-bottom:10px;text-align:center;">
+                La livraison reelle differe du bon de commande initial sur <strong>${ecarts.length} produit(s)</strong>.
+            </p>
+            <div style="max-height:260px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#f8fafc;position:sticky;top:0;z-index:1;">
+                            <th style="padding:8px 10px;font-size:11px;text-align:left;color:#64748b;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e2e8f0;">Produit</th>
+                            <th style="padding:8px 10px;font-size:11px;text-align:center;color:#64748b;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e2e8f0;">Qte (cmd vs recu)</th>
+                            <th style="padding:8px 10px;font-size:11px;text-align:center;color:#64748b;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e2e8f0;">Prix Achat</th>
+                        </tr>
+                    </thead>
+                    <tbody>${lignesHtml}</tbody>
+                </table>
+            </div>
+            <p style="font-size:11px;color:#94a3b8;margin-top:10px;text-align:center;">
+                Ces modifications seront enregistrees dans l'historique des achats.
+            </p>
+        </div>`;
+
+        const confirmDiff = await Swal.fire({
+            title          : 'Ecarts detectes sur la livraison',
+            html           : diffHtml,
+            icon           : 'warning',
+            width          : '640px',
+            showCancelButton    : true,
+            confirmButtonText   : 'Continuer malgre les ecarts',
+            cancelButtonText    : 'Annuler — corriger les saisies',
+            confirmButtonColor  : '#0f172a',
+            cancelButtonColor   : '#94a3b8',
+            customClass    : { popup: 'swal-wide' }
+        });
+
+        if (!confirmDiff.isConfirmed) return; // L'utilisateur corrige
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ETAPE 5 — Choix PMP / Remplacer (si prix modifié)
+    // ──────────────────────────────────────────────────────────────
+    if (aPrixModifie) {
+        const resPrix = await Swal.fire({
+            title    : 'Mise a jour du Prix d\'Achat',
+            html     : `
+                <p style="font-size:13px;color:#475569;margin-bottom:16px;">
+                    Le prix d'achat de certains produits a change.<br>
+                    Choisissez la methode de mise a jour du <strong>prix de reference</strong> dans la fiche produit.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left;">
+                    <div style="border:2px solid #e2e8f0;border-radius:10px;padding:14px;cursor:pointer;" id="card-remplacer">
+                        <div style="font-weight:700;color:#dc2626;margin-bottom:4px;">Remplacer</div>
+                        <div style="font-size:12px;color:#64748b;">Le nouveau prix ecrase directement l'ancien. Adapte si l'ancien PA n'est plus representatif.</div>
+                    </div>
+                    <div style="border:2px solid #e2e8f0;border-radius:10px;padding:14px;cursor:pointer;" id="card-pmp">
+                        <div style="font-weight:700;color:#16a34a;margin-bottom:4px;">PMP (Prix Moyen Pondere)</div>
+                        <div style="font-size:12px;color:#64748b;">Calcule la moyenne ponderee entre le stock existant et le nouvel arrivage. Recommande.</div>
+                    </div>
+                </div>`,
+            icon           : 'question',
+            width          : '520px',
+            showDenyButton : true,
+            showCancelButton    : true,
+            confirmButtonText   : 'Remplacer',
+            denyButtonText      : 'Utiliser le PMP',
+            cancelButtonText    : 'Annuler',
+            confirmButtonColor  : '#dc2626',
+            denyButtonColor     : '#16a34a',
+            cancelButtonColor   : '#94a3b8',
+        });
+
+        if (resPrix.isConfirmed)     { methodeCalcul = 'remplacer'; }
+        else if (resPrix.isDenied)   { methodeCalcul = 'pmp'; }
+        else                         { return; } // Annulé
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ETAPE 6 — Confirmation finale avec récapitulatif
+    // ──────────────────────────────────────────────────────────────
+    const totalFacture = parseFloat(
+        $('#total_global_reception').text().replace(/\s/g, '').replace('F','')
+    ) || 0;
+
+    const confirmFinal = await Swal.fire({
+        title  : 'Confirmer la reception',
+        html   : `
+            <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:#475569;">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                    <span>Commande</span><strong>#${id_commande}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                    <span>Fournisseur</span><strong>${bonOriginal.nom_fournisseur}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                    <span>Nb produits recus</span><strong>${lignesSaisies.length}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                    <span>Total facture</span><strong style="color:#16a34a;">${totalFacture.toLocaleString('fr-FR')} FCFA</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                    <span>Methode PA</span>
+                    <strong style="color:${methodeCalcul==='pmp'?'#16a34a':'#dc2626'};">${methodeCalcul === 'pmp' ? 'PMP' : 'Remplacement direct'}</strong>
+                </div>
+                ${ecarts.length > 0 ? `
+                <div style="margin-top:10px;background:#fffbeb;border-radius:6px;padding:8px 12px;font-size:11px;color:#92400e;">
+                    ${ecarts.length} ecart(s) seront consignes dans l'historique.
+                </div>` : `
+                <div style="margin-top:10px;background:#f0fdf4;border-radius:6px;padding:8px 12px;font-size:11px;color:#15803d;">
+                    Aucun ecart — livraison conforme au bon de commande.
+                </div>`}
+            </div>`,
+        icon            : 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Valider la reception',
+        cancelButtonText : 'Retour',
+        confirmButtonColor: '#0f172a',
+    });
+
+    if (!confirmFinal.isConfirmed) return;
+
+    // ──────────────────────────────────────────────────────────────
+    // ETAPE 7 — Envoi AJAX au serveur
+    // ──────────────────────────────────────────────────────────────
+
+    // Spinner
+    Swal.fire({
+        title             : 'Traitement en cours...',
+        html              : 'Mise a jour du stock et des achats.',
+        allowOutsideClick : false,
+        didOpen           : () => Swal.showLoading()
+    });
+
+    $.ajax({
+        url      : 'ajax_produits.php',
+        type     : 'POST',
+        dataType : 'json',
+        data     : {
+            action       : 'valider_reception_finale',
+            id_commande  : id_commande,
+            mode_prix    : methodeCalcul,
+            total_facture: totalFacture,
+            lignes       : lignesSaisies
+        },
+        success  : function(res) {
+            Swal.close();
+
+            if (res.status !== 'success') {
+                Swal.fire('Erreur', res.message, 'error');
+                return;
+            }
+
+            // Afficher le rapport de réception
+            afficherRapportReception(res);
+        },
+        error    : function() {
+            Swal.fire('Erreur', 'Connexion impossible au serveur.', 'error');
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Affichage du rapport post-réception avec révision prix de vente
+// ═══════════════════════════════════════════════════════════════════
+function afficherRapportReception(res) {
+
+    // Lignes produits avec PA modifié (pour révision prix de vente)
+    const hasPrixVente = res.produits_pa_modifie && res.produits_pa_modifie.length > 0;
+
+    // Résumé de l'opération
+    let resumeHtml = `
+        <div style="font-family:'DM Sans',sans-serif;">
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:14px;text-align:left;">
+                <div style="font-weight:700;color:#15803d;margin-bottom:8px;font-size:14px;">Reception enregistree avec succes</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:#475569;">
+                    <div>Achat cree : <strong>#${res.id_achat}</strong></div>
+                    <div>Lots crees : <strong>${res.nb_stocks}</strong></div>
+                    <div>Mvts stock : <strong>${res.nb_mouvements}</strong></div>
+                    <div>Statut : <strong style="color:#16a34a;">Livree</strong></div>
+                </div>
+            </div>`;
+
+    if (hasPrixVente) {
+        // Tableau des produits dont le PA a changé → proposition de mise à jour PV
+        let lignesPV = res.produits_pa_modifie.map(p => {
+            const pctSuggere = ((p.nouveau_pa / (p.ancien_pa || 1)) * (p.ancien_pv > 0 ? p.ancien_pv / (p.ancien_pa || 1) : 1.3)).toFixed(0);
+            return `
+            <tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:7px 8px;font-size:12px;font-weight:600;">${p.nom}</td>
+                <td style="padding:7px 8px;text-align:center;font-size:12px;">${p.ancien_pa.toLocaleString('fr-FR')} F</td>
+                <td style="padding:7px 8px;text-align:center;font-size:12px;color:#dc2626;font-weight:700;">${p.nouveau_pa.toLocaleString('fr-FR')} F</td>
+                <td style="padding:7px 8px;text-align:center;">
+                    <input type="number"
+                           class="swal2-input input-pv-revision"
+                           data-id-produit="${p.id_produit}"
+                           data-id-stock="${p.id_stock}"
+                           value="${p.ancien_pv}"
+                           min="1" step="1"
+                           style="width:100px;margin:0;height:32px;font-size:12px;text-align:center;">
+                </td>
+            </tr>`;
+        }).join('');
+
+        resumeHtml += `
+            <div style="margin-top:4px;">
+                <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px;text-align:left;">
+                    Prix de vente a reviser (PA modifie) :
+                </div>
+                <div style="max-height:200px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th style="padding:7px 8px;font-size:10px;text-align:left;color:#64748b;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Produit</th>
+                                <th style="padding:7px 8px;font-size:10px;text-align:center;color:#64748b;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Ancien PA</th>
+                                <th style="padding:7px 8px;font-size:10px;text-align:center;color:#64748b;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Nouveau PA</th>
+                                <th style="padding:7px 8px;font-size:10px;text-align:center;color:#64748b;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Nouveau PV</th>
+                            </tr>
+                        </thead>
+                        <tbody>${lignesPV}</tbody>
+                    </table>
+                </div>
+                <p style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:left;">Modifiez les prix de vente si nécessaire, puis cliquez sur "Enregistrer les PV".</p>
+            </div>`;
+    }
+
+    resumeHtml += '</div>';
+
+    Swal.fire({
+        title            : 'Reception terminee',
+        html             : resumeHtml,
+        icon             : 'success',
+        width            : '580px',
+        showCancelButton : hasPrixVente,
+        confirmButtonText: hasPrixVente ? 'Enregistrer les PV' : 'Fermer',
+        cancelButtonText : 'Ignorer les PV',
+        confirmButtonColor: '#0f172a',
+        cancelButtonColor : '#94a3b8',
+    }).then(result => {
+        if (hasPrixVente && result.isConfirmed) {
+            // Collecter les nouveaux PV saisis
+            let miseAJourPV = [];
+            $('.input-pv-revision').each(function() {
+                miseAJourPV.push({
+                    id_produit : $(this).data('id-produit'),
+                    id_stock   : $(this).data('id-stock'),
+                    nouveau_pv : parseFloat($(this).val()) || 0
+                });
+            });
+
+            if (miseAJourPV.length > 0) {
+                $.post('ajax_produits.php', {
+                    action  : 'update_prix_vente_batch',
+                    produits: miseAJourPV
+                }, function(r) {
+                    if (r.status === 'success') {
+                        Swal.fire({
+                            icon : 'success',
+                            title:'a jour',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => location.reload());
+                    } else {
+                        Swal.fire('Erreur', r.message, 'error');
+                    }
+                }, 'json');
+            } else {
+                location.reload();
+            }
+        } else {
+            location.reload();
+        }
     });
 }
 
@@ -6071,19 +7982,31 @@ function chargerAlertesStock() {
     // Fonction pour charger les données
     function loadMouvements() {
         let formData = $('#filter-form').serialize();
-        
-        // Effet de chargement
-        $('#body-mouvements').html('<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Chargement...</td></tr>');
+
+        $('#body-mouvements').html(
+            '<tr><td colspan="7" class="text-center py-4">' +
+            '<i class="fas fa-spinner fa-spin me-2"></i> Chargement...</td></tr>'
+        );
+        $('#badge-count').text('');
 
         $.ajax({
-            url: 'fetch_mouvements.php', // Nom du fichier PHP créé plus haut
+            url: 'fetch_mouvements_grouped.php',
             type: 'POST',
             data: formData,
-            success: function(response) {
+            success: function (response) {
                 $('#body-mouvements').html(response);
+
+                // Compte le nombre de lignes produit chargées
+                let nb = $('#body-mouvements tr[data-id-produit]').length;
+                if (nb > 0) {
+                    $('#badge-count').text(nb + ' produit' + (nb > 1 ? 's' : ''));
+                }
             },
-            error: function() {
-                $('#body-mouvements').html('<tr><td colspan="6" class="text-center text-danger">Erreur de connexion.</td></tr>');
+            error: function () {
+                $('#body-mouvements').html(
+                    '<tr><td colspan="7" class="text-center text-danger py-3">' +
+                    '<i class="fas fa-exclamation-triangle me-2"></i>Erreur de connexion.</td></tr>'
+                );
             }
         });
     }
@@ -6092,7 +8015,7 @@ function chargerAlertesStock() {
     
 
     // Intercepter la soumission du formulaire
-    $('#filter-form').on('submit', function(e) {
+      $('#filter-form').on('submit', function (e) {
         e.preventDefault();
         loadMouvements();
     });
@@ -6105,6 +8028,84 @@ function chargerAlertesStock() {
         let table = document.querySelector("#panel-mouvements table");
         let wb = XLSX.utils.table_to_book(table, { sheet: "Mouvements" });
         XLSX.writeFile(wb, "Flux_Stocks_" + new Date().toLocaleDateString() + ".xlsx");
+    });
+
+
+        $(document).on('click', 'tr[data-id-produit]', function () {
+        let idProduit    = $(this).data('id-produit');
+        let nomProduit   = $(this).data('nom-produit');
+        let nbMvt        = $(this).data('nb-mvt');
+        let totalEntrees = $(this).data('total-entrees');
+        let totalSorties = $(this).data('total-sorties');
+        let stockActuel  = $(this).data('stock-actuel');
+
+        // Pré-remplir le résumé
+        $('#modal-product-name').text(nomProduit);
+        $('#modal-total-entrees').text('+' + totalEntrees);
+        $('#modal-total-sorties').text('-' + totalSorties);
+        $('#modal-nb-mvt').text(nbMvt);
+        $('#modal-stock-actuel').text(stockActuel);
+
+        // Couleur stock actuel (positif/nul/négatif)
+        let sA = parseFloat(String(stockActuel).replace(/\s/g, ''));
+        $('#modal-stock-actuel')
+            .removeClass('text-success text-danger text-warning')
+            .addClass(sA > 0 ? 'text-success' : (sA < 0 ? 'text-danger' : 'text-warning'));
+
+        // Récupérer les filtres de période actifs
+        let fDebut = $('[name="f_debut"]').val();
+        let fFin   = $('[name="f_fin"]').val();
+        let fType  = $('[name="f_type"]').val();
+        let infoFiltre = '';
+        if (fDebut && fFin) infoFiltre += 'Periode : ' + fDebut + ' au ' + fFin + '  ';
+        if (fType)          infoFiltre += 'Type : ' + fType.replace(/_/g, ' ').toUpperCase();
+        $('#modal-filter-info').text(infoFiltre || 'Tous les mouvements');
+
+        // Vider et afficher le spinner
+        $('#modal-body-detail').html(
+            '<tr><td colspan="7" class="text-center py-4">' +
+            '<i class="fas fa-spinner fa-spin me-2"></i> Chargement des mouvements...</td></tr>'
+        );
+
+        // Ouvrir le modal
+        let modal = new bootstrap.Modal(document.getElementById('modalDetailMouvements'));
+        modal.show();
+
+        // Charger les mouvements détaillés du produit
+        $.ajax({
+            url: 'fetch_mouvements_detail.php',
+            type: 'POST',
+            data: {
+                id_produit: idProduit,
+                f_debut:    fDebut,
+                f_fin:      fFin,
+                f_type:     fType
+            },
+            success: function (response) {
+                $('#modal-body-detail').html(response);
+            },
+            error: function () {
+                $('#modal-body-detail').html(
+                    '<tr><td colspan="7" class="text-center text-danger py-3">' +
+                    '<i class="fas fa-exclamation-triangle me-2"></i>Erreur de chargement.</td></tr>'
+                );
+            }
+        });
+    });
+
+
+          $('#modal-print-btn').on('click', function () {
+        let produit = $('#modal-product-name').text();
+        let contenu = document.getElementById('modalDetailMouvements').innerHTML;
+        let win = window.open('', '_blank');
+        win.document.write(
+            '<html><head><title>Mouvements - ' + produit + '</title>' +
+            '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">' +
+            '</head><body class="p-4">' + contenu + '</body></html>'
+        );
+        win.document.close();
+        win.focus();
+        setTimeout(function () { win.print(); win.close(); }, 800);
     });
 
     // --- EXPORT PDF ---
@@ -6174,6 +8175,11 @@ $(document).on('change', '.commande-check', function() {
     recalculerTotalGlobal();
 });
 
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('collapsed');
+    document.querySelector('.content').classList.toggle('collapsed');
+}
+
 
 loadMouvements();
 chargerAlertesStock()
@@ -6181,6 +8187,300 @@ chargerInventaireDirect()
 chargerProduitsInventaire()
 afficherRecapitulatif()
 chargerHistoriqueInventaires()
+</script>
+
+<script>
+$(function () {
+
+    // ── 1. Charger la liste des fournisseurs dans le select ──
+    $.post('ajax_produits.php', { action: 'liste_fournisseurs' }, function (data) {
+        if (!Array.isArray(data)) return;
+        data.forEach(f => {
+            $('#f_fournisseur_achats').append(
+                `<option value="${f.id_fournisseur}">${f.nom_fournisseur}</option>`
+            );
+        });
+    }, 'json');
+
+
+    // ── 2. Chargement de la vue groupée ──
+    function loadAchatsGrouped() {
+        const formData = $('#filter-achats-form').serialize();
+
+        $('#body-achats-grouped').html(
+            `<tr><td colspan="8" class="text-center py-3 text-muted">
+                <i class="fas fa-spinner fa-spin me-2"></i> Chargement...
+            </td></tr>`
+        );
+
+        $.ajax({
+            url: 'fetch_achats_grouped.php',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function (response) {
+                $('#body-achats-grouped').html(response.html);
+                $('#achats-count-badge').text(response.total + ' produits');
+
+                // Attacher les clics sur les lignes
+                bindRowClicks();
+            },
+            error: function () {
+                $('#body-achats-grouped').html(
+                    `<tr><td colspan="8" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Erreur de connexion.
+                    </td></tr>`
+                );
+            }
+        });
+    }
+
+
+    // ── 3. Clic sur une ligne → ouvrir le modal ──
+    function bindRowClicks() {
+        $('#body-achats-grouped tr.row-produit-achat').on('click', function () {
+            const idProduit   = $(this).data('id-produit');
+            const nomProduit  = $(this).data('nom-produit');
+            const molecule    = $(this).data('molecule') || '';
+
+            // Remplir le header modal
+            $('#modal-produit-nom').text(nomProduit);
+            $('#modal-produit-molecule').text(molecule ? '(' + molecule + ')' : '');
+            $('#modal-id-produit').val(idProduit);
+
+            // Propager les dates du filtre global
+            $('#modal-f-debut').val($('#f_debut_achats').val());
+            $('#modal-f-fin').val($('#f_fin_achats').val());
+
+            // Réinitialiser les stats
+            $('#stat-nb-factures, #stat-qte-totale, #stat-montant-total, #stat-prix-moyen')
+                .text('--');
+
+            // Ouvrir le modal
+            const modal = new bootstrap.Modal(document.getElementById('modalDetailAchats'));
+            modal.show();
+
+            // Charger le détail
+            loadDetailAchats();
+        });
+    }
+
+
+    // ── 4. Chargement du détail dans le modal ──
+    function loadDetailAchats() {
+        const formData = $('#modal-filter-form').serialize();
+
+        $('#body-detail-achats').html(
+            `<tr><td colspan="10" class="text-center py-3 text-muted">
+                <i class="fas fa-spinner fa-spin me-2"></i> Chargement...
+            </td></tr>`
+        );
+
+        $.ajax({
+            url: 'fetch_achats_detail.php',
+            type: 'POST',
+            dataType: 'json',
+            data: formData,
+            success: function (response) {
+                $('#body-detail-achats').html(response.html);
+
+                // Mettre à jour les stats
+                if (response.stats) {
+                    const s = response.stats;
+                    $('#stat-nb-factures').text(s.nb_factures);
+                    $('#stat-qte-totale').text(
+                        parseFloat(s.qte_totale || 0).toLocaleString('fr-FR')
+                    );
+                    $('#stat-montant-total').text(
+                        parseFloat(s.montant_total || 0).toLocaleString('fr-FR') + ' FCFA'
+                    );
+                    $('#stat-prix-moyen').text(
+                        parseFloat(s.prix_moyen || 0).toLocaleString('fr-FR') + ' FCFA'
+                    );
+                }
+            },
+            error: function () {
+                $('#body-detail-achats').html(
+                    `<tr><td colspan="10" class="text-center text-danger">
+                        Erreur de connexion.
+                    </td></tr>`
+                );
+            }
+        });
+    }
+
+
+    // ── 5. Recherche live avec debounce ──
+    let debounceTimer;
+    $('#search-produit-achats').on('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            loadAchatsGrouped();
+        }, 400);
+    });
+
+    $('#clear-search-achats').on('click', function () {
+        $('#search-produit-achats').val('');
+        loadAchatsGrouped();
+    });
+
+
+    // ── 6. Soumission des formulaires ──
+    $('#filter-achats-form').on('submit', function (e) {
+        e.preventDefault();
+        loadAchatsGrouped();
+    });
+
+    $('#modal-filter-form').on('submit', function (e) {
+        e.preventDefault();
+        loadDetailAchats();
+    });
+
+    $('#reset-filter-achats').on('click', function () {
+        $('#filter-achats-form')[0].reset();
+        loadAchatsGrouped();
+    });
+
+
+    // ── 7. Chargement initial ──
+    loadAchatsGrouped();
+
+function openEditAchatModal(idProduit, nomProduit) {
+    $('#modal-produit-nom').text(nomProduit);
+    $('#edit-achat-alert').addClass('d-none').text('');
+    $('#body-edit-achat-lignes').html(
+        '<tr><td colspan="8" class="text-center py-4 text-muted">' +
+        '<i class="fas fa-spinner fa-spin me-1"></i> Chargement...</td></tr>'
+    );
+
+    $('#modalEditAchat').modal('show');
+
+    $.ajax({
+        url: 'get_detail_achat_lignes.php',
+        type: 'POST',
+        data: { id_produit: idProduit },
+        dataType: 'json',
+        success: function(res) {
+            if (res.success) {
+                $('#body-edit-achat-lignes').html(res.html);
+                bindSaveLigneButtons();
+            } else {
+                $('#body-edit-achat-lignes').html(
+                    '<tr><td colspan="8" class="text-center text-danger py-3">' + res.message + '</td></tr>'
+                );
+            }
+        },
+        error: function() {
+            $('#body-edit-achat-lignes').html(
+                '<tr><td colspan="8" class="text-center text-danger py-3">' +
+                '<i class="fas fa-exclamation-triangle me-1"></i> Erreur de connexion.</td></tr>'
+            );
+        }
+    });
+}
+
+/**
+ * Attache les boutons "Enregistrer" dans le tableau d'edition
+ */
+function bindSaveLigneButtons() {
+    $('.btn-save-ligne-achat').off('click').on('click', function() {
+        const $btn    = $(this);
+        const idLigne = $btn.data('id-detail');
+        const idAchat = $btn.data('id-achat');
+        const idStock = $btn.data('id-stock');
+
+        const newQte   = parseFloat($('#qte_'   + idLigne).val());
+        const newPrix  = parseFloat($('#prix_'  + idLigne).val());
+        const oldQte   = parseFloat($('#qte_'   + idLigne).data('original'));
+        const oldPrix  = parseFloat($('#prix_'  + idLigne).data('original'));
+
+        // Aucune modification
+        if (newQte === oldQte && newPrix === oldPrix) {
+            showEditAlert('info', 'Aucune modification detectee pour cette ligne.');
+            return;
+        }
+
+        // Validation basique
+        if (isNaN(newQte) || newQte <= 0) {
+            showEditAlert('danger', 'La quantite doit etre un nombre positif.');
+            return;
+        }
+        if (isNaN(newPrix) || newPrix <= 0) {
+            showEditAlert('danger', 'Le prix doit etre un nombre positif.');
+            return;
+        }
+
+        // Confirmation
+        if (!confirm('Confirmer la modification ?\n\nQte : ' + oldQte + ' → ' + newQte +
+                     '\nPrix : ' + oldPrix + ' → ' + newPrix + ' FCFA')) {
+            return;
+        }
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: 'update_detail_achat.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                id_detail_achat : idLigne,
+                id_achat        : idAchat,
+                id_stock        : idStock,
+                new_quantite    : newQte,
+                new_prix        : newPrix,
+                old_quantite    : oldQte,
+                old_prix        : oldPrix
+            },
+            success: function(res) {
+                if (res.success) {
+                    showEditAlert('success', res.message);
+                    // Mettre a jour les valeurs "original" pour eviter double-sauvegarde
+                    $('#qte_'  + idLigne).data('original', newQte);
+                    $('#prix_' + idLigne).data('original', newPrix);
+                    // Rafraichir le tableau principal
+                    loadAchatsGrouped();
+                } else {
+                    showEditAlert('danger', res.message);
+                }
+                $btn.prop('disabled', false).html('<i class="fas fa-save"></i>');
+            },
+            error: function() {
+                showEditAlert('danger', 'Erreur de connexion au serveur.');
+                $btn.prop('disabled', false).html('<i class="fas fa-save"></i>');
+            }
+        });
+    });
+}
+
+/**
+ * Affiche une alerte dans le modal
+ */
+function showEditAlert(type, msg) {
+    const icons = {
+        success : 'fas fa-check-circle',
+        danger  : 'fas fa-exclamation-circle',
+        info    : 'fas fa-info-circle',
+        warning : 'fas fa-exclamation-triangle'
+    };
+    $('#edit-achat-alert')
+        .removeClass('d-none alert-success alert-danger alert-info alert-warning')
+        .addClass('alert-' + type)
+        .html('<i class="' + icons[type] + ' me-2"></i>' + msg);
+}
+
+// ── Mise a jour de bindRowClicks pour ouvrir le modal ──
+function bindRowClicks() {
+    // Bouton oeil => ouvre le modal d'edition
+    $(document).off('click', '.btn-edit-achat-ligne').on('click', '.btn-edit-achat-ligne', function(e) {
+        e.stopPropagation();
+        const $tr = $(this).closest('tr');
+        openEditAchatModal(
+            $tr.data('id-produit'),
+            $tr.data('nom-produit')
+        );
+    });
+}
+});
 </script>
 </body>
 </html>

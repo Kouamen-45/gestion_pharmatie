@@ -94,7 +94,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'add_prod') {
             $molecule = $_POST['molecule'] ?? '';
             $dosage = $_POST['dosage'] ?? '';
             $id_sf = !empty($_POST['id_sous_famille']) ? $_POST['id_sous_famille'] : NULL;
-            $id_f = !empty($_POST['id_fournisseur_pref']) ? $_POST['id_fournisseur_pref'] : NULL;
+            $id_f = !empty($_POST['id_fournisseur']) ? $_POST['id_fournisseur'] : NULL;
             $peremption_mois = intval($_POST['delai_peremption'] ?? 6);
             $est_detail = $_POST['est_detail'] ?? 0;
             $coef = ($est_detail == '1') ? intval($_POST['coefficient_division'] ?? 1) : 1;
@@ -105,13 +105,13 @@ if (isset($_POST['action']) && $_POST['action'] == 'add_prod') {
         $sqlProd = "INSERT INTO produits (
             nom_commercial, molecule, dosage, id_sous_famille, id_fournisseur_pref, 
             prix_unitaire, prix_unitaire_detail, prix_achat, seuil_alerte, 
-            delai_peremption, est_divers, emplacement, est_detail, coefficient_division
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            delai_peremption, est_divers, emplacement, est_detail, coefficient_division,id_fournisseur
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
         
         $pdo->prepare($sqlProd)->execute([
             $nom, $molecule, $dosage, $id_sf, $id_f, 
             $prix_vente, $prix_detail, $prix_achat, $seuil, 
-            $peremption_mois, $est_divers, $emplacement, $est_detail, $coef
+            $peremption_mois, $est_divers, $emplacement, $est_detail, $coef, $id_f
         ]);
 
         $id_produit = $pdo->lastInsertId();
@@ -276,7 +276,7 @@ elseif ($action == 'get_besoins_autopilote') {
             p.id_produit, 
             p.nom_commercial, 
             p.stock_max, 
-            p.prix_unitaire, -- ON RÉCUPÈRE LE PRIX D'ACHAT ICI
+            p.prix_achat, -- ON RÉCUPÈRE LE PRIX D'ACHAT ICI
             (SELECT IFNULL(SUM(quantite_disponible), 0) FROM stocks WHERE id_produit = p.id_produit) as stock_actuel,
             (SELECT IFNULL(SUM(dv.quantite), 0) / 30 
              FROM details_ventes dv 
@@ -1213,72 +1213,176 @@ if ($action == 'valider_reception_achat') {
         }
 
         // --- ÉTAPE 3 : Traitement des lignes de produits ---
-        foreach ($_POST['lignes'] as $l) {
-            $id_prod = $l['id_produit'];
-            $coef = floatval($l['coef']) ?: 1;
-            
-            // Nouveau prix d'achat converti à l'unité de détail (Prix Boite / Coef)
-            $nouveau_pa_unitaire = floatval($l['prix_achat_boite']);
-            $quantite_recue = floatval($l['quantite_unitaire']);
+$produits_pa_modifie = [];
 
-            $nouveau_prix_final = $nouveau_pa_unitaire;
+foreach ($_POST['lignes'] as $l) {
+    $id_prod          = intval($l['id_produit']);
+    $nouveau_pa_boite = floatval($l['prix_achat_boite']);
+    $coef             = floatval($l['coef']) ?: 1;
+    $nouveau_pa_unitaire = $nouveau_pa_boite / $coef;
+    $quantite_recue   = floatval($l['quantite_unitaire']); // Quantité en unités
+    $numero_lot       = $l['numero_lot'] ?? null;
+    $date_peremption  = !empty($l['date_peremption']) ? $l['date_peremption'] : null;
 
-            if ($methode_pa === 'pmp') {
-                // Récupérer les données actuelles DEPUIS la table produits
-                $stmtGetPA = $pdo->prepare("
-                    SELECT prix_achat, 
-                           (SELECT IFNULL(SUM(quantite_disponible), 0) FROM stocks WHERE id_produit = ?) as stock_actuel
-                    FROM produits WHERE id_produit = ?
-                ");
-                $stmtGetPA->execute([$id_prod, $id_prod]);
-                $prod_data = $stmtGetPA->fetch();
+    // -------------------------------------------------------
+    // Récupérer infos produit (PA ancien + prix de vente)
+    // -------------------------------------------------------
+    $stmtInfo = $pdo->prepare("
+        SELECT 
+            p.nom_commercial,
+            p.prix_achat            AS ancien_pa,
+            p.prix_unitaire         AS prix_vente_boite,
+            p.prix_unitaire_detail  AS prix_vente_detail,
+            p.coefficient_division  AS coef
+        FROM produits p
+        WHERE p.id_produit = ?
+    ");
+    $stmtInfo->execute([$id_prod]);
+    $info = $stmtInfo->fetch(PDO::FETCH_ASSOC);
 
-                $pa_actuel_unitaire = floatval($prod_data['prix_achat'] ?? 0);
-                $stock_actuel = floatval($prod_data['stock_actuel'] ?? 0);
+    if (!$info) continue;
 
-                // Correction Formule PMP : 
-                // On ne calcule le PMP que s'il y a déjà du stock, sinon le nouveau prix est simplement le nouveau PA
-                if ($stock_actuel > 0) {
-                    $nouveau_prix_final = (($stock_actuel * $pa_actuel_unitaire) + ($quantite_recue * $nouveau_pa_unitaire)) / ($stock_actuel + $quantite_recue);
-                } else {
-                    $nouveau_prix_final = $nouveau_pa_unitaire;
-                }
-            }
+    $ancien_pa = floatval($info['ancien_pa']);
 
-            // A. Enregistrement du détail de l'achat (CONSERVÉ)
-            $stmtD = $pdo->prepare("INSERT INTO detail_achats (id_achat, id_produit, quantite_recue, prix_achat_unitaire, date_peremption) VALUES (?, ?, ?, ?, ?)");
-            $stmtD->execute([$id_achat, $id_prod, $quantite_recue, $nouveau_pa_unitaire, $l['date_peremption']]);
+    // -------------------------------------------------------
+    // Mise à jour du PA selon méthode choisie (PMP ou remplacer)
+    // -------------------------------------------------------
+    if ($methode_pa === 'pmp') {
+        // Récupérer le stock total actuel pour calculer le PMP
+        $stmtStock = $pdo->prepare("
+            SELECT COALESCE(SUM(quantite_disponible), 0) AS stock_total
+            FROM stocks
+            WHERE id_produit = ?
+        ");
+        $stmtStock->execute([$id_prod]);
+        $stockActuel = floatval($stmtStock->fetchColumn());
 
-            // B. Mise à jour de la fiche PRODUIT
-            $stmtUpd = $pdo->prepare("UPDATE produits SET prix_achat = ? WHERE id_produit = ?");
-            $stmtUpd->execute([$nouveau_prix_final, $id_prod]);
+        $nouveau_pa_unitaire = ($stockActuel > 0)
+            ? (($ancien_pa * $stockActuel) + ($nouveau_pa_unitaire * $quantite_recue)) / ($stockActuel + $quantite_recue)
+            : $nouveau_pa_unitaire;
+    }
 
-            // C. Création du LOT en stock
-            $stmtS = $pdo->prepare("INSERT INTO stocks (id_produit, numero_lot, prix_achat, date_peremption, quantite_disponible, date_reception) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmtS->execute([
-                $id_prod, 
-                $l['numero_lot'], 
-                $nouveau_pa_unitaire, // Prix réel du lot
-                $l['date_peremption'], 
-                $quantite_recue, 
-                $date_achat
-            ]);
-            $id_stock = $pdo->lastInsertId();
+    // -------------------------------------------------------
+    // INSERTION / MISE À JOUR dans stocks
+    // On cherche d'abord si ce lot existe déjà pour ce produit
+    // -------------------------------------------------------
+    $stmtFindStock = $pdo->prepare("
+        SELECT id_stock
+        FROM stocks
+        WHERE id_produit = ?
+          AND numero_lot = ?
+        LIMIT 1
+    ");
+    $stmtFindStock->execute([$id_prod, $numero_lot]);
+    $stockExistant = $stmtFindStock->fetch(PDO::FETCH_ASSOC);
 
-            // D. Mouvement de stock
-            $stmtM = $pdo->prepare("INSERT INTO mouvements_stock (id_produit, id_stock, type_mouvement, quantite, id_utilisateur, commentaire, date_mouvement) VALUES (?, ?, 'entree_achat', ?, ?, ?, NOW())");
-            $stmtM->execute([
-                $id_prod, 
-                $id_stock, 
-                $quantite_recue, 
-                $_SESSION['user_id'], 
-                "Réception Facture: " . $num_facture
-            ]);
-        }
+    if ($stockExistant) {
+        // Lot existant → on incrémente la quantité disponible
+        $id_stock = $stockExistant['id_stock'];
+        $stmtUpdateStock = $pdo->prepare("
+            UPDATE stocks
+            SET 
+                quantite_disponible = quantite_disponible + ?,
+                prix_achat          = ?,
+                date_peremption     = ?,
+                date_reception      = NOW()
+            WHERE id_stock = ?
+        ");
+        $stmtUpdateStock->execute([
+            $quantite_recue,
+            $nouveau_pa_unitaire, // prix unitaire mis à jour
+            $date_peremption,
+            $id_stock
+        ]);
+    } else {
+        // Nouveau lot → on insère une nouvelle ligne
+        $stmtInsertStock = $pdo->prepare("
+            INSERT INTO stocks 
+                (id_produit, numero_lot, prix_achat, date_peremption, quantite_disponible, date_reception)
+            VALUES 
+                (?, ?, ?, ?, ?, NOW())
+        ");
+        $stmtInsertStock->execute([
+            $id_prod,
+            $numero_lot,
+            $nouveau_pa_unitaire,
+            $date_peremption,
+            $quantite_recue
+        ]);
+        $id_stock = $pdo->lastInsertId(); // Récupérer l'ID du stock fraîchement créé
+    }
 
-        $pdo->commit();
-        echo json_encode(['status' => 'success']);
-        
+    // -------------------------------------------------------
+    // INSERTION dans detail_achats
+    // -------------------------------------------------------
+    $stmtDetail = $pdo->prepare("
+        INSERT INTO detail_achats 
+            (id_achat, id_produit, quantite_recue, prix_achat_unitaire, date_peremption)
+        VALUES 
+            (?, ?, ?, ?, ?)
+    ");
+    $stmtDetail->execute([
+        $id_achat,
+        $id_prod,
+        $quantite_recue,
+        $nouveau_pa_unitaire,
+        $date_peremption
+    ]);
+
+    // -------------------------------------------------------
+    // INSERTION dans mouvements_stock
+    // -------------------------------------------------------
+    $stmtMvt = $pdo->prepare("
+        INSERT INTO mouvements_stock 
+            (id_produit, id_stock, type_mouvement, quantite, date_mouvement, id_utilisateur, commentaire, motif)
+        VALUES 
+            (?, ?, 'entree_achat', ?, NOW(), ?, ?, 'achat')
+    ");
+    $stmtMvt->execute([
+        $id_prod,
+        $id_stock,                                       // ID du stock (nouveau ou existant)
+        $quantite_recue,                                 // Quantité reçue
+        $_SESSION['user_id'],                            // Utilisateur connecté
+        "Reception achat - Facture: " . $num_facture .  // Commentaire détaillé
+        " | Lot: " . ($numero_lot ?? 'N/A')
+    ]);
+
+    // -------------------------------------------------------
+    // Détection changement de prix → suggestion prix de vente
+    // -------------------------------------------------------
+    if (abs($nouveau_pa_unitaire - $ancien_pa) > 0.5) {
+        $marge_actuelle = ($ancien_pa > 0)
+            ? ($info['prix_vente_boite'] / ($ancien_pa * $coef))
+            : 1.3;
+
+        $prix_vente_suggere_boite  = round($nouveau_pa_unitaire * $coef * $marge_actuelle);
+        $prix_vente_suggere_detail = ($info['prix_vente_detail'] > 0 && $coef > 1)
+            ? round($prix_vente_suggere_boite / $coef * 1.05)
+            : 0;
+
+        $produits_pa_modifie[] = [
+            'id_produit'                => $id_prod,
+            'nom_commercial'            => $info['nom_commercial'],
+            'coef'                      => $coef,
+            'ancien_pa_unitaire'        => round($ancien_pa, 2),
+            'nouveau_pa_unitaire'       => round($nouveau_pa_unitaire, 2),
+            'ancien_pa_boite'           => round($ancien_pa * $coef, 2),
+            'nouveau_pa_boite'          => round($nouveau_pa_unitaire * $coef, 2),
+            'prix_vente_boite'          => floatval($info['prix_vente_boite']),
+            'prix_vente_detail'         => floatval($info['prix_vente_detail']),
+            'prix_vente_suggere_boite'  => $prix_vente_suggere_boite,
+            'prix_vente_suggere_detail' => $prix_vente_suggere_detail,
+        ];
+    }
+}
+
+$pdo->commit();
+
+echo json_encode([
+    'status'              => 'success',
+    'produits_pa_modifie' => $produits_pa_modifie,
+]);
+
     } catch (Exception $e) {
         $pdo->rollBack();
         echo json_encode(['status' => 'error', 'message' => "Erreur : " . $e->getMessage()]);
@@ -1286,6 +1390,47 @@ if ($action == 'valider_reception_achat') {
     exit;
 }
 
+if ($action === 'maj_prix_vente') {
+    ob_clean();
+    header('Content-Type: application/json');
+
+    $lignes = $_POST['lignes'] ?? [];
+
+    if (empty($lignes)) {
+        echo json_encode(['status' => 'error', 'message' => 'Aucune donnee recue']);
+        exit;
+    }
+
+    $pdo->beginTransaction();
+    try {
+        foreach ($lignes as $l) {
+            $id_prod            = intval($l['id_produit']);
+            $prix_vente_boite   = floatval($l['prix_vente_boite']);
+            $prix_vente_detail  = floatval($l['prix_vente_detail']);
+
+            if ($prix_vente_boite <= 0) continue;
+
+            $pdo->prepare("
+                UPDATE produits
+                SET prix_unitaire        = ?,
+                    prix_unitaire_detail = ?
+                WHERE id_produit = ?
+            ")->execute([
+                $prix_vente_boite,
+                $prix_vente_detail > 0 ? $prix_vente_detail : null,
+                $id_prod
+            ]);
+        }
+
+        $pdo->commit();
+        echo json_encode(['status' => 'success']);
+
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit;
+}
 
 if ($action == 'verifier_doublon_facture') {
     $stmt = $pdo->prepare("SELECT id_achat FROM achats WHERE num_facture = ? AND id_fournisseur = ?");
@@ -1541,11 +1686,13 @@ elseif ($action == 'changer_statut_commande') {
 elseif ($action == 'get_lignes_pour_reception') {
     $id = intval($_POST['id_commande']);
     
-    // On ajoute p.prix_achat_unitaire à la requête
-    $stmt = $pdo->prepare("SELECT cl.*, p.nom_commercial, p.prix_unitaire 
-                           FROM commande_lignes cl 
-                           JOIN produits p ON cl.id_produit = p.id_produit 
-                           WHERE cl.id_commande = ?");
+    // Ajoutez le coefficient de division à la requête
+    $stmt = $pdo->prepare("
+        SELECT cl.*, p.nom_commercial, p.prix_achat, p.coefficient_division 
+        FROM commande_lignes cl 
+        JOIN produits p ON cl.id_produit = p.id_produit 
+        WHERE cl.id_commande = ?
+    ");
     $stmt->execute([$id]);
     $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1638,61 +1785,224 @@ if ($_POST['action']== 'get_details_commande') {
     exit;
 }
 
-elseif ($action == 'valider_reception_finale') {
+elseif ($action === 'get_details_commande_full') {
+
+    $id = intval($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID invalide.']);
+        exit;
+    }
+
     try {
-        $pdo->beginTransaction();
-        
-        $lignes = $_POST['lignes'] ?? [];
-        $mode_prix = $_POST['mode_prix']; // 'remplacer' ou 'pmp'
-        $id_cmd = intval($_POST['id_commande']);
 
-        foreach ($lignes as $l) {
-            $id_p = intval($l['id_p']);
-            $nouveau_pa = floatval($l['pa_r']);
-            $qte_recue = intval($l['qte_r']);
+        // ── 1. Informations principales de la commande ───────────
+        $stmtCmd = $pdo->prepare("
+            SELECT
+                c.id_commande,
+                c.date_commande,
+                c.statut,
+                c.total_prevu,
+                c.id_fournisseur,
+                f.nom_fournisseur,
+                f.telephone          AS telephone_fournisseur,
+                f.email              AS email_fournisseur,
+                u.nom_complet        AS nom_caissier,
+                -- Date réception = date_achat de l'achat lié si existant
+                (
+                    SELECT DATE(a.date_achat)
+                    FROM achats a
+                    WHERE a.num_facture = CONCAT('CMD-', LPAD(c.id_commande, 6, '0'))
+                    LIMIT 1
+                ) AS date_reception,
+                -- Achat lié
+                (
+                    SELECT a.id_achat
+                    FROM achats a
+                    WHERE a.num_facture = CONCAT('CMD-', LPAD(c.id_commande, 6, '0'))
+                    LIMIT 1
+                ) AS id_achat_lie
+            FROM commandes c
+            LEFT JOIN fournisseurs f ON f.id_fournisseur = c.id_fournisseur
+            -- On suppose que id_utilisateur est dans commandes, sinon adapter
+            LEFT JOIN utilisateurs u ON u.id_user = c.id_fournisseur
+            WHERE c.id_commande = ?
+        ");
+        $stmtCmd->execute([$id]);
+        $commande = $stmtCmd->fetch(PDO::FETCH_ASSOC);
 
-            // 1. Récupérer l'ancien PA et le stock actuel total
-            $stmt = $pdo->prepare("
-                SELECT prix_unitaire, 
-                (SELECT IFNULL(SUM(quantite_disponible), 0) FROM stocks WHERE id_produit = ?) as stock_actuel 
-                FROM produits WHERE id_produit = ?
-            ");
-            $stmt->execute([$id_p, $id_p]);
-            $prod_info = $stmt->fetch();
-
-            $ancien_pa = floatval($prod_info['prix_unitaire']);
-            $stock_actuel = intval($prod_info['stock_actuel']);
-            
-            $pa_final = $nouveau_pa; // Valeur par défaut (Remplacer)
-
-            // 2. Calcul du PMP (Prix Moyen Pondéré) si l'option est choisie
-            if ($mode_prix == 'pmp') {
-                $total_quantite = $stock_actuel + $qte_recue;
-                if ($total_quantite > 0) {
-                    $valeur_stock_ancien = $stock_actuel * $ancien_pa;
-                    $valeur_nouvel_arrivage = $qte_recue * $nouveau_pa;
-                    $pa_final = ($valeur_stock_ancien + $valeur_nouvel_arrivage) / $total_quantite;
-                }
-            }
-
-            // 3. Mise à jour de la fiche produit (Le PA de référence)
-            $upd_prod = $pdo->prepare("UPDATE produits SET prix_unitaire = ? WHERE id_produit = ?");
-            $upd_prod->execute([round($pa_final, 2), $id_p]);
-
-            // 4. Insertion dans la table stocks (Le nouveau lot)
-            $ins_stock = $pdo->prepare("
-                INSERT INTO stocks (id_produit, quantite_disponible, prix_achat, numero_lot, date_peremption, date_reception) 
-                VALUES (?, ?, ?, ?, ?, NOW())
-            ");
-            $ins_stock->execute([$id_p, $qte_recue, $nouveau_pa, $l['lot'], $l['peremp']]);
-
-            // 5. Mise à jour de la ligne de commande
-            $upd_cmd_L = $pdo->prepare("UPDATE commande_lignes SET quantite_recue = ? WHERE id_commande = ? AND id_produit = ?");
-            $upd_cmd_L->execute([$qte_recue, $id_cmd, $id_p]);
+        if (!$commande) {
+            echo json_encode(['success' => false, 'message' => 'Commande introuvable.']);
+            exit;
         }
 
-        // Finaliser la commande
-        $pdo->prepare("UPDATE commandes SET statut = 'livree' WHERE id_commande = ?")->execute([$id_cmd]);
+        // ── 2. Lignes de commande enrichies ─────────────────────
+        $stmtLignes = $pdo->prepare("
+            SELECT
+                cl.id_ligne,
+                cl.id_produit,
+                cl.quantite_commandee,
+                cl.quantite_recue,
+
+                p.nom_commercial,
+                p.molecule,
+                p.prix_acha                AS pa_reference,
+                p.prix_unitaire            AS pv_actuel,
+                p.seuil_alerte,
+                p.emplacement,
+
+                -- Stock actuel total du produit
+                IFNULL(
+                    (SELECT SUM(s.quantite_disponible)
+                     FROM stocks s WHERE s.id_produit = p.id_produit),
+                    0
+                ) AS stock_actuel,
+
+                -- Données du lot reçu si réception faite
+                (
+                    SELECT s.numero_lot
+                    FROM stocks s
+                    WHERE s.id_produit  = p.id_produit
+                      AND s.date_reception >= DATE(c.date_commande)
+                    ORDER BY s.date_reception DESC
+                    LIMIT 1
+                ) AS numero_lot,
+
+                (
+                    SELECT s.date_peremption
+                    FROM stocks s
+                    WHERE s.id_produit  = p.id_produit
+                      AND s.date_reception >= DATE(c.date_commande)
+                    ORDER BY s.date_reception DESC
+                    LIMIT 1
+                ) AS date_peremption,
+
+                (
+                    SELECT s.prix_achat
+                    FROM stocks s
+                    WHERE s.id_produit  = p.id_produit
+                      AND s.date_reception >= DATE(c.date_commande)
+                    ORDER BY s.date_reception DESC
+                    LIMIT 1
+                ) AS pa_reel_recu
+
+            FROM commande_lignes cl
+            JOIN produits  p ON p.id_produit  = cl.id_produit
+            JOIN commandes c ON c.id_commande = cl.id_commande
+            WHERE cl.id_commande = ?
+            ORDER BY p.nom_commercial ASC
+        ");
+        $stmtLignes->execute([$id]);
+        $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($lignes)) {
+            echo json_encode(['success' => false, 'message' => 'Aucun produit dans cette commande.']);
+            exit;
+        }
+
+        // ── 3. Formatage des lignes ──────────────────────────────
+        $reception_faite  = in_array($commande['statut'], ['livree', 'terminee']);
+        $lignesFormatees  = [];
+
+        foreach ($lignes as $l) {
+
+            // Calcul écart péremption
+            $alertePerem = false;
+            $datePeremFmt = null;
+            if ($l['date_peremption']) {
+                $dateP       = new DateTime($l['date_peremption']);
+                $now         = new DateTime();
+                $joursRestants = (int)$now->diff($dateP)->days;
+                $alertePerem = $joursRestants <= 90 && $dateP > $now;
+                $datePeremFmt = $dateP->format('d/m/Y')
+                    . ($alertePerem
+                        ? " (Expire dans {$joursRestants}j)"
+                        : ($dateP < $now ? " [PERIME]" : ''));
+            }
+
+            // Calcul écart PA
+            $paRef  = floatval($l['pa_reference'] ?? 0);
+            $paReel = floatval($l['pa_reel_recu'] ?? 0);
+            $diffPa = $paReel > 0 ? $paReel - $paRef : 0;
+            $pctPa  = $paRef > 0 && $diffPa != 0 ? round(($diffPa / $paRef) * 100, 1) : 0;
+
+            $lignesFormatees[] = [
+                'id_produit'        => intval($l['id_produit']),
+                'nom_commercial'    => $l['nom_commercial'],
+                'molecule'          => $l['molecule'] ?? '',
+                'pa_reference'      => $paRef,
+                'pa_reel_recu'      => $paReel,
+                'diff_pa'           => $diffPa,
+                'pct_pa'            => $pctPa,
+                'pv_actuel'         => floatval($l['pv_actuel'] ?? 0),
+                'stock_actuel'      => intval($l['stock_actuel'] ?? 0),
+                'seuil_alerte'      => intval($l['seuil_alerte'] ?? 0),
+                'emplacement'       => $l['emplacement'] ?? '',
+                'quantite_commandee'=> floatval($l['quantite_commandee']),
+                'quantite_recue'    => floatval($l['quantite_recue'] ?? 0),
+                'numero_lot'        => $l['numero_lot'] ?? '',
+                'date_peremption'   => $l['date_peremption'] ?? '',
+                'date_peremption_fmt'=> $datePeremFmt,
+                'alerte_peremption' => $alertePerem,
+                'reception_faite'   => $reception_faite,
+            ];
+        }
+
+        // ── 4. Formatage commande ────────────────────────────────
+        $commande['date_commande_fmt'] = date('d/m/Y H:i', strtotime($commande['date_commande']));
+        $commande['date_reception_fmt'] = $commande['date_reception']
+            ? date('d/m/Y', strtotime($commande['date_reception'])) : null;
+        $commande['reception_faite'] = $reception_faite;
+
+        echo json_encode([
+            'success'  => true,
+            'commande' => $commande,
+            'lignes'   => $lignesFormatees,
+        ]);
+
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Erreur SQL : ' . htmlspecialchars($e->getMessage())
+        ]);
+    }
+    exit;
+}
+
+
+
+elseif ($action === 'update_prix_vente_batch') {
+
+    try {
+        $pdo->beginTransaction();
+
+        $produits = $_POST['produits'] ?? [];
+        $id_user  = $_SESSION['id_user'] ?? null;
+
+        foreach ($produits as $p) {
+            $id_produit = intval($p['id_produit'] ?? 0);
+            $nouveau_pv = floatval($p['nouveau_pv'] ?? 0);
+
+            if ($id_produit <= 0 || $nouveau_pv <= 0) continue;
+
+            $pdo->prepare("
+                UPDATE produits
+                SET prix_unitaire = ?
+                WHERE id_produit  = ?
+            ")->execute([$nouveau_pv, $id_produit]);
+
+            // Log
+            if ($id_user) {
+                $pdo->prepare("
+                    INSERT INTO logs_activites
+                        (utilisateur, action_type, description, date_action, ip_adresse)
+                    VALUES (?, 'MAJ_PRIX_VENTE', ?, NOW(), ?)
+                ")->execute([
+                    $id_user,
+                    'Revision prix vente produit #' . $id_produit . ' => ' . $nouveau_pv . ' FCFA',
+                    $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'
+                ]);
+            }
+        }
 
         $pdo->commit();
         echo json_encode(['status' => 'success']);
@@ -1700,6 +2010,261 @@ elseif ($action == 'valider_reception_finale') {
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+elseif ($action === 'valider_reception_finale') {
+
+    try {
+        $pdo->beginTransaction();
+
+        $id_commande   = intval($_POST['id_commande']   ?? 0);
+        $mode_prix     = trim($_POST['mode_prix']        ?? 'remplacer');
+        $total_facture = floatval($_POST['total_facture'] ?? 0);
+        $lignes        = $_POST['lignes'] ?? [];
+        $id_user       = $_SESSION['id_user'] ?? null;
+
+        if ($id_commande <= 0 || empty($lignes)) {
+            throw new Exception('Parametres invalides.');
+        }
+
+        // ── Récupérer les infos de la commande ──
+        $stmtCmd = $pdo->prepare("
+            SELECT c.*, f.nom_fournisseur
+            FROM commandes c
+            LEFT JOIN fournisseurs f ON f.id_fournisseur = c.id_fournisseur
+            WHERE c.id_commande = ?
+        ");
+        $stmtCmd->execute([$id_commande]);
+        $commande = $stmtCmd->fetch(PDO::FETCH_ASSOC);
+
+        if (!$commande) {
+            throw new Exception('Commande #' . $id_commande . ' introuvable.');
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // 1. Créer l'entrée dans la table ACHATS
+        //    (La réception d'une commande génère un achat)
+        // ══════════════════════════════════════════════════════════
+        $montant_total_calc = 0;
+        // Pré-calcul du total réel
+        foreach ($lignes as $l) {
+            $montant_total_calc += floatval($l['pa_saisi'] ?? $l['pa_r'] ?? 0)
+                                 * floatval($l['qte_recue'] ?? $l['qte_r'] ?? 0);
+        }
+
+        $stmtAchat = $pdo->prepare("
+            INSERT INTO achats (
+                date_achat,
+                id_fournisseur,
+                montant_total,
+                montant_paye,
+                statut_paiement,
+                mode_reglement,
+                date_echeance,
+                id_utilisateur,
+                num_facture
+            ) VALUES (NOW(), ?, ?, 0, 'impaye', 'a_definir', NULL, ?, ?)
+        ");
+        $stmtAchat->execute([
+            intval($commande['id_fournisseur']),
+            round($montant_total_calc, 2),
+            $id_user,
+            'CMD-' . str_pad($id_commande, 6, '0', STR_PAD_LEFT)
+        ]);
+        $id_achat = $pdo->lastInsertId();
+
+        // ══════════════════════════════════════════════════════════
+        // 2. Traitement ligne par ligne
+        // ══════════════════════════════════════════════════════════
+        $nb_stocks        = 0;
+        $nb_mouvements    = 0;
+        $produits_modifie = [];
+
+        foreach ($lignes as $l) {
+
+            // Normalisation des champs (gère les deux nommages)
+            $id_p      = intval($l['id_produit']  ?? $l['id_p']   ?? 0);
+            $qte_recue = floatval($l['qte_recue'] ?? $l['qte_r']  ?? 0);
+            $pa_saisi  = floatval($l['pa_saisi']  ?? $l['pa_r']   ?? 0);
+            $lot       = trim($l['lot']           ?? '');
+            $peremption= trim($l['peremption']    ?? $l['peremp'] ?? '');
+
+            if ($id_p <= 0 || $qte_recue <= 0) continue;
+
+            // ── Récupérer infos produit ──────────────────────────
+            $stmtProd = $pdo->prepare("
+                SELECT
+                    p.nom_commercial,
+                    p.prix_achat          AS pa_actuel,
+                    p.prix_unitaire      AS pv_actuel,
+                    p.coefficient_division AS coef,
+                    IFNULL(
+                        (SELECT SUM(s.quantite_disponible)
+                         FROM stocks s
+                         WHERE s.id_produit = p.id_produit), 0
+                    ) AS stock_total
+                FROM produits p
+                WHERE p.id_produit = ?
+            ");
+            $stmtProd->execute([$id_p]);
+            $prod = $stmtProd->fetch(PDO::FETCH_ASSOC);
+
+            if (!$prod) continue;
+
+            $pa_actuel   = floatval($prod['pa_actuel']  ?? 0);
+            $pv_actuel   = floatval($prod['pv_actuel']  ?? 0);
+            $stock_total = floatval($prod['stock_total'] ?? 0);
+            $prixChange  = abs($pa_saisi - $pa_actuel) > 0.1;
+
+            // ── Calcul PA final (PMP ou Remplacement) ───────────
+            $pa_final = $pa_saisi; // par défaut : remplacer
+
+            if ($mode_prix === 'pmp' && $prixChange) {
+                $total_qte = $stock_total + $qte_recue;
+                if ($total_qte > 0) {
+                    $pa_final = (($stock_total * $pa_actuel) + ($qte_recue * $pa_saisi))
+                               / $total_qte;
+                }
+            }
+            $pa_final = round($pa_final, 2);
+
+            // ── 2a. Mise à jour prix_acha dans produits ──────────
+            $pdo->prepare("
+                UPDATE produits SET prix_achat = ? WHERE id_produit = ?
+            ")->execute([$pa_final, $id_p]);
+
+            // ── 2b. INSERT dans detail_achats ────────────────────
+            $pdo->prepare("
+                INSERT INTO detail_achats (
+                    id_achat,
+                    id_produit,
+                    quantite_recue,
+                    prix_achat_unitaire,
+                    date_peremption
+                ) VALUES (?, ?, ?, ?, ?)
+            ")->execute([
+                $id_achat,
+                $id_p,
+                $qte_recue,
+                $pa_saisi,        // On conserve le PA réel de la facture dans detail_achats
+                $peremption ?: null
+            ]);
+
+            // ── 2c. INSERT dans stocks (nouveau lot) ─────────────
+            $stmtStock = $pdo->prepare("
+                INSERT INTO stocks (
+                    id_produit,
+                    numero_lot,
+                    prix_achat,
+                    date_peremption,
+                    quantite_disponible,
+                    date_reception
+                ) VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            $stmtStock->execute([
+                $id_p,
+                $lot  ?: null,
+                $pa_saisi,
+                $peremption ?: null,
+                $qte_recue
+            ]);
+            $id_stock = $pdo->lastInsertId();
+            $nb_stocks++;
+
+            // ── 2d. INSERT dans mouvements_stock ─────────────────
+            $pdo->prepare("
+                INSERT INTO mouvements_stock (
+                    id_produit,
+                    id_stock,
+                    type_mouvement,
+                    quantite,
+                    date_mouvement,
+                    id_utilisateur,
+                    commentaire,
+                    motif
+                ) VALUES (?, ?, 'entree', ?, NOW(), ?, ?, 'reception_commande')
+            ")->execute([
+                $id_p,
+                $id_stock,
+                $qte_recue,
+                $id_user,
+                'Reception commande #' . $id_commande
+                    . ' — Lot : ' . ($lot ?: 'N/A')
+                    . ' — Fournisseur : ' . $commande['nom_fournisseur']
+            ]);
+            $nb_mouvements++;
+
+            // ── 2e. Mise à jour quantite_recue dans commande_lignes
+            $pdo->prepare("
+                UPDATE commande_lignes
+                SET quantite_recue = ?
+                WHERE id_commande = ? AND id_produit = ?
+            ")->execute([$qte_recue, $id_commande, $id_p]);
+
+            // ── Mémoriser les produits avec PA changé ────────────
+            if ($prixChange) {
+                $produits_modifie[] = [
+                    'id_produit'  => $id_p,
+                    'id_stock'    => $id_stock,
+                    'nom'         => $prod['nom_commercial'],
+                    'ancien_pa'   => $pa_actuel,
+                    'nouveau_pa'  => $pa_final,
+                    'ancien_pv'   => $pv_actuel,
+                ];
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // 3. Finaliser la commande
+        // ══════════════════════════════════════════════════════════
+        $pdo->prepare("
+            UPDATE commandes
+            SET statut = 'livree'
+            WHERE id_commande = ?
+        ")->execute([$id_commande]);
+
+        // ══════════════════════════════════════════════════════════
+        // 4. Log d'activité
+        // ══════════════════════════════════════════════════════════
+        if ($id_user) {
+            $desc = sprintf(
+                'Reception commande #%d — Fournisseur : %s — %d ligne(s) — Total : %s FCFA — Mode PA : %s — Achat #%d cree',
+                $id_commande,
+                $commande['nom_fournisseur'],
+                count($lignes),
+                number_format($montant_total_calc, 0, ',', ' '),
+                strtoupper($mode_prix),
+                $id_achat
+            );
+            $pdo->prepare("
+                INSERT INTO logs_activites
+                    (utilisateur, action_type, description, date_action, ip_adresse)
+                VALUES (?, 'RECEPTION_COMMANDE', ?, NOW(), ?)
+            ")->execute([
+                $id_user,
+                $desc,
+                $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'
+            ]);
+        }
+
+        $pdo->commit();
+
+        echo json_encode([
+            'status'               => 'success',
+            'id_achat'             => $id_achat,
+            'nb_stocks'            => $nb_stocks,
+            'nb_mouvements'        => $nb_mouvements,
+            'produits_pa_modifie'  => $produits_modifie,
+        ]);
+
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        echo json_encode([
+            'status'  => 'error',
+            'message' => $e->getMessage()
+        ]);
     }
     exit;
 }
