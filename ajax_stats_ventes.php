@@ -297,7 +297,7 @@ if ($action === 'stats_jour') {
     ]);
 
 // ════════════════════════════════════════════════
-//  4. STATS PRODUITS
+//  4. STATS PRODUITS titres
 // ════════════════════════════════════════════════
 } elseif ($action === 'stats_produits') {
 
@@ -324,7 +324,7 @@ if ($action === 'stats_jour') {
             p.id_produit,
             p.nom_commercial                                    AS nom,
             p.molecule,
-            p.prix_acha                                         AS pa_ref,
+            p.prix_achat                                         AS pa_ref,
             IFNULL(f.nom_famille, 'N/A')                        AS famille,
             COUNT(DISTINCT dv.id_vente)                         AS nb_tickets,
             IFNULL(SUM(dv.quantite), 0)                         AS qte_vendue,
@@ -349,7 +349,7 @@ if ($action === 'stats_jour') {
         $params[':search'] = '%' . $search . '%';
     }
 
-    $sql .= " GROUP BY p.id_produit, p.nom_commercial, p.molecule, p.prix_acha, f.nom_famille ";
+    $sql .= " GROUP BY p.id_produit, p.nom_commercial, p.molecule, p.prix_achat, f.nom_famille ";
 
     if ($afficher !== 'tous') {
         $sql .= " HAVING ca_total > 0 ";
@@ -408,7 +408,8 @@ if ($action === 'stats_jour') {
 // ════════════════════════════════════════════════
 //  5. STATS FAMILLES
 // ════════════════════════════════════════════════
-} elseif ($action === 'stats_familles') {
+} 
+elseif ($action === 'stats_familles') {
 
     [$debut, $fin] = plage(trim($_GET['periode'] ?? 'semaine'));
 

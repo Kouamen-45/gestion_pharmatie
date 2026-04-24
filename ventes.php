@@ -1850,24 +1850,72 @@ body {
     </div>
 
 
-    <div id="marges" class="v-panel">
-    <div class="tabs-nav">
-        <button class="tab-btn active" onclick="showMargesSubPanel('jours')">Marge / Jours</button>
-        <button class="tab-btn" onclick="showMargesSubPanel('semaines')">Marge / Semaines</button>
-        <button class="tab-btn" onclick="showMargesSubPanel('mois')">Marge / Mois</button>
-        <button class="tab-btn" onclick="showMargesSubPanel('produits')">Marge / Produits</button>
-        <button class="tab-btn" onclick="showMargesSubPanel('familles')">Marge / Famille et Sous-Famille</button>
-        <button class="tab-btn" onclick="showMargesSubPanel('total')">Marge Totale</button>
-        <button class="tab-btn" onclick="showMargesSubPanel('evolution')">Évolution avec le Temps</button>
-    </div>
-      <div id="date-filter-container" style="padding: 15px; background: white; border-bottom: 1px solid #eee; display:none;">
-        <label for="marge_date_picker" style="font-weight: bold; margin-right: 10px;">Choisir une date :</label>
-        <input type="date" id="marge_date_picker" class="pro-input" value="<?php echo date('Y-m-d'); ?>">
-        <button class="btn-filter" onclick="filterMargeByDate()">Analyser cette journée</button>
-    </div>
-    <div id="marges-content">
-        <!-- Le contenu des sous-panneaux sera chargé ici -->
-    </div>
+<div id="marges" class="v-panel">
+
+  <!-- Sous-navigation -->
+  <div style="display:flex;gap:4px;border-bottom:1px solid #e5e7eb;margin-bottom:0;overflow-x:auto;flex-shrink:0;">
+    <button class="sub-tab-btn active" id="mtab-jours"    onclick="showMargesSubPanel('jours')">
+      <i class="fas fa-calendar-day"></i> Jour
+    </button>
+    <button class="sub-tab-btn" id="mtab-semaines"        onclick="showMargesSubPanel('semaines')">
+      <i class="fas fa-calendar-week"></i> Semaines
+    </button>
+    <button class="sub-tab-btn" id="mtab-mois"            onclick="showMargesSubPanel('mois')">
+      <i class="fas fa-calendar-alt"></i> Mois
+    </button>
+    <button class="sub-tab-btn" id="mtab-produits"        onclick="showMargesSubPanel('produits')">
+      <i class="fas fa-pills"></i> Produits
+    </button>
+    <button class="sub-tab-btn" id="mtab-familles"        onclick="showMargesSubPanel('familles')">
+      <i class="fas fa-layer-group"></i> Familles
+    </button>
+    <button class="sub-tab-btn" id="mtab-total"           onclick="showMargesSubPanel('total')">
+      <i class="fas fa-sigma"></i> Total
+    </button>
+    <button class="sub-tab-btn" id="mtab-evolution"       onclick="showMargesSubPanel('evolution')">
+      <i class="fas fa-chart-line"></i> Evolution
+    </button>
+  </div>
+
+  <!-- ── Filtre date unique (Jour) ─────────────────────────── -->
+  <div id="marge-date-filter"
+    style="display:none;align-items:center;gap:10px;padding:10px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;">
+    <label style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;">
+      <i class="fas fa-calendar-day"></i> Date :
+    </label>
+    <input type="date" id="marge_date_picker"
+      style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:11.5px;color:#111827;outline:none;"
+      value="<?php echo date('Y-m-d'); ?>">
+    <button onclick="filterMargeByDate()"
+      style="padding:5px 12px;background:#1d4ed8;color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+      <i class="fas fa-search"></i> Analyser
+    </button>
+  </div>
+
+  <!-- ── Filtre plage de dates (Semaines / Mois / Evolution) ── -->
+  <div id="marge-range-filter"
+    style="display:none;align-items:center;gap:10px;padding:10px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;">
+    <label style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;">
+      <i class="fas fa-calendar-alt"></i> Periode :
+    </label>
+    <input type="date" id="marge_date_debut"
+      style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:11.5px;color:#111827;outline:none;"
+      value="<?php echo date('Y-m-01'); ?>">
+    <span style="font-size:11px;color:#9ca3af;">au</span>
+    <input type="date" id="marge_date_fin"
+      style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:11.5px;color:#111827;outline:none;"
+      value="<?php echo date('Y-m-d'); ?>">
+    <button onclick="filterMargeByRange()"
+      style="padding:5px 12px;background:#1d4ed8;color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+      <i class="fas fa-sync-alt"></i> Appliquer
+    </button>
+  </div>
+
+  <!-- ── Contenu dynamique ─────────────────────────────────── -->
+  <div id="marges-content" style="padding:14px;">
+    <!-- Chargé dynamiquement par showMargesSubPanel() -->
+  </div>
+
 </div>
 
     <!-- ---- PANEL HISTORIQUE ---- -->
@@ -2698,9 +2746,40 @@ function escJs(str) {
   return String(str).replace(/'/g,"\\'").replace(/\\/g,'\\\\');
 }
 
+function fmtXAF(n) {
+  n = parseFloat(n) || 0;
+  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(Math.round(n)) + ' F';
+}
+function fmtPct(n) {
+  return (parseFloat(n) || 0).toFixed(1) + '%';
+}
 
 const STAT_COLORS = ['#1d4ed8','#16a34a','#d97706','#7c3aed','#0891b2',
                      '#dc2626','#059669','#f59e0b','#8b5cf6','#06b6d4'];
+const MARGE_COLORS = ['#1d4ed8','#16a34a','#d97706','#7c3aed',
+                      '#0891b2','#dc2626','#059669','#f59e0b','#8b5cf6','#06b6d4'];
+
+function tendanceMarge(val, prev) {
+  if (!prev || prev == 0) return '<span style="color:#9ca3af;font-size:10px;">—</span>';
+  const d = ((val - prev) / Math.abs(prev) * 100).toFixed(1);
+  if (d > 0) return `<span style="color:#16a34a;font-size:10px;font-weight:700;"><i class="fas fa-arrow-up"></i> +${d}%</span>`;
+  if (d < 0) return `<span style="color:#dc2626;font-size:10px;font-weight:700;"><i class="fas fa-arrow-down"></i> ${d}%</span>`;
+  return `<span style="color:#6b7280;font-size:10px;">=</span>`;
+}
+function miniBarH(val, max, color) {
+  const pct = max > 0 ? Math.min((val / max) * 100, 100).toFixed(1) : 0;
+  return `<div style="width:80px;background:#f3f4f6;border-radius:99px;height:6px;overflow:hidden;display:inline-block;vertical-align:middle;">
+            <div style="width:${pct}%;background:${color};height:6px;"></div>
+          </div>`;
+}
+
+function margeBadge(taux) {
+  const t = parseFloat(taux);
+  if (t >= 30) return `<span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:99px;font-size:9.5px;font-weight:800;">${fmtPct(t)}</span>`;
+  if (t >= 15) return `<span style="background:#fef9c3;color:#854d0e;padding:2px 7px;border-radius:99px;font-size:9.5px;font-weight:800;">${fmtPct(t)}</span>`;
+  if (t >= 0)  return `<span style="background:#fff7ed;color:#c2410c;padding:2px 7px;border-radius:99px;font-size:9.5px;font-weight:800;">${fmtPct(t)}</span>`;
+  return `<span style="background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:99px;font-size:9.5px;font-weight:800;">${fmtPct(t)}</span>`;
+}
 
 function showSubStat(id) {
   document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
@@ -2950,13 +3029,13 @@ function chargerStatsProduits() {
   const periode  = $('#prod-periode').val()  || 'semaine';
   const tri      = $('#prod-tri').val()      || 'ca';
   const afficher = $('#prod-afficher').val() || 'top';
-  const search   = $('#prod-search-stats').val() || '';
+  const search   = $('#prod-search-stats').val() || ''; 
 
-  const titres = { top:'Top vendeurs', flop:'Flop vendeurs', tous:'Tous les produits' };
-  $('#table-prod-title').text(`${titres[afficher]} — periode : ${periode}`);
+  $('#table-prod-title').text(` — periode : ${periode}`);
   $('#table-produits-stats').html('<tr><td colspan="9" style="text-align:center;padding:16px;color:#9ca3af;"><i class="fas fa-spinner fa-spin"></i></td></tr>');
 
   $.get('ajax_stats_ventes.php', { action: 'stats_produits', periode, tri, afficher, search }, function(res) {
+    console.log(res)
     if (!res.success) return;
     const d = res.data;
 
@@ -2969,9 +3048,9 @@ function chargerStatsProduits() {
     const total_ca = d.ca_total || 1;
     let html = '';
     (d.produits || []).forEach((p, i) => {
-      const partPct = ((p.ca / total_ca) * 100).toFixed(1);
-      const margeEst = p.pa_moyen > 0 ? ((p.ca - (p.pa_moyen * p.qte)) / p.ca * 100).toFixed(1) : '—';
-      const margeColor = margeEst !== '—' ? (parseFloat(margeEst) > 20 ? '#16a34a' : (parseFloat(margeEst) > 0 ? '#d97706' : '#dc2626')) : '#9ca3af';
+      const cpv = p.pa_moyen * p.qte; // Coût des produits vendus
+      const margeBrute = p.ca - cpv; // Marge brute
+      const tauxMarge = cpv > 0 ? ((margeBrute / p.ca) * 100).toFixed(1) : 0; // Taux de marge
 
       html += `
         <tr>
@@ -2983,16 +3062,9 @@ function chargerStatsProduits() {
           <td style="padding:7px 8px;text-align:center;font-family:'DM Mono',monospace;font-weight:700;font-size:13px;">${p.qte}</td>
           <td style="padding:7px 8px;text-align:center;font-size:11.5px;color:#6b7280;">${p.nb_tickets}</td>
           <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:#111827;">${fmtF(p.ca)}</td>
-          <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:10.5px;color:#6b7280;">${p.pa_moyen > 0 ? fmtF(p.pa_moyen) : '—'}</td>
-          <td style="padding:7px 8px;text-align:right;font-weight:700;color:${margeColor};font-size:11px;">${margeEst !== '—' ? margeEst + '%' : '—'}</td>
-          <td style="padding:7px 8px;text-align:center;">
-            <div style="display:flex;align-items:center;gap:5px;justify-content:center;">
-              <div style="width:50px;background:#f3f4f6;border-radius:99px;height:5px;overflow:hidden;">
-                <div style="width:${partPct}%;background:${STAT_COLORS[i % STAT_COLORS.length]};height:5px;"></div>
-              </div>
-              <span style="font-size:9.5px;font-weight:700;color:${STAT_COLORS[i % STAT_COLORS.length]};">${partPct}%</span>
-            </div>
-          </td>
+          <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;">${p.pa_moyen > 0 ? fmtF(p.pa_moyen) : '—'}</td>
+          <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:#16a34a;">${fmtF(margeBrute)}</td>
+          <td style="padding:7px 8px;text-align:right;">${tauxMarge}%</td>
           <td style="padding:7px 8px;text-align:center;">${perfBadge(i + 1, d.produits.length)}</td>
         </tr>`;
     });
@@ -3003,6 +3075,7 @@ function chargerStatsProduits() {
     $('#table-produits-stats').html(html);
   }, 'json');
 }
+
 
 // Filtrage live produits
 $(document).on('keyup', '#prod-search-stats', function() {
@@ -3152,56 +3225,846 @@ function afficherSousFamilles(id_famille, nom, periode, color) {
   }, 'json');
 }
 
-function showMargesSubPanel(type, specificDate = null) {
+function showMargesSubPanel(type, extra = {}) {
 
-  if(type === 'jours') {
-        $('#date-filter-container').fadeIn();
+  // ── 1. Onglets actifs ──────────────────────────────────────
+  document.querySelectorAll('#marges .sub-tab-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById('mtab-' + type);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  // ── 2. Filtres contextuels (avec garde-fous null-safe) ─────
+  const dateFilter  = document.getElementById('marge-date-filter');
+  const rangeFilter = document.getElementById('marge-range-filter');
+
+  // Sécurité : on ne touche aux éléments que s'ils existent
+  if (dateFilter && rangeFilter) {
+    if (type === 'jours') {
+      dateFilter.style.display  = 'flex';
+      rangeFilter.style.display = 'none';
+
+      // Valeur par défaut = aujourd'hui
+      const picker = document.getElementById('marge_date_picker');
+      if (picker && !picker.value) {
+        picker.value = new Date().toISOString().split('T')[0];
+      }
+
+    } else if (['semaines', 'mois', 'evolution'].includes(type)) {
+      dateFilter.style.display  = 'none';
+      rangeFilter.style.display = 'flex';
+
     } else {
-        $('#date-filter-container').hide();
+      // produits, familles, total → aucun filtre date
+      dateFilter.style.display  = 'none';
+      rangeFilter.style.display = 'none';
     }
-    const container = $('#marges-content');
-    container.html('<div class="loader">Chargement des analyses...</div>');
-    
-    // On garde trace du bouton actif
-    $('.tab-btn').removeClass('active');
-    $(`button[onclick*="'${type}'"]`).addClass('active');
-    let params = { type: type };
-    if (specificDate) params.date = specificDate;
-    $.get('ajax_marges.php', params, function(res) {
-      console.log(res)
-        try {
-            const data = JSON.parse(res);
-            if (data.length === 0) {
-                container.html('<div class="alert">Aucune donnée trouvée pour cette période.</div>');
-                return;
-            }
-            renderProfessionalTable(type, data);
-        } catch (e) {
-            container.html('<div class="alert error">Erreur lors de l\'affichage des données.</div>');
-        }
-    });
+  }
+
+  // ── 3. Loader ──────────────────────────────────────────────
+  const container = $('#marges-content');
+  container.html(`
+    <div style="text-align:center;padding:40px;color:#9ca3af;">
+      <i class="fas fa-spinner fa-spin" style="font-size:22px;"></i>
+      <div style="margin-top:10px;font-size:12px;">Chargement des analyses...</div>
+    </div>`);
+
+  // ── 4. Params AJAX ─────────────────────────────────────────
+  let params = { type };
+
+  if (extra.date)  params.date  = extra.date;
+  if (extra.debut) params.debut = extra.debut;
+  if (extra.fin)   params.fin   = extra.fin;
+
+  // Pour le type 'jours' sans extra.date → lire le picker
+  if (type === 'jours' && !params.date) {
+    const picker = document.getElementById('marge_date_picker');
+    if (picker && picker.value) params.date = picker.value;
+  }
+
+  // Pour les types avec plage → lire les inputs début/fin
+  if (['semaines', 'mois', 'evolution'].includes(type) && !params.debut) {
+    const debut = document.getElementById('marge_date_debut');
+    const fin   = document.getElementById('marge_date_fin');
+    if (debut && debut.value) params.debut = debut.value;
+    if (fin   && fin.value)   params.fin   = fin.value;
+  }
+
+  // ── 5. Requête AJAX ────────────────────────────────────────
+  $.get('ajax_marges.php', params, function(res) {
+    console.log(res)
+    try {
+      const data = res;
+
+      if (!data || (Array.isArray(data) && data.length === 0)) {
+        container.html(`
+          <div style="text-align:center;padding:40px;color:#9ca3af;">
+            <i class="fas fa-inbox" style="font-size:28px;opacity:.3;display:block;margin-bottom:10px;"></i>
+            Aucune donnee trouvee pour cette periode
+          </div>`);
+        return;
+      }
+
+      renderMargesPanel(type, data);
+
+    } catch(e) {
+      container.html(`
+        <div style="color:#dc2626;padding:20px;font-size:12px;border-left:3px solid #dc2626;background:#fef2f2;border-radius:5px;margin:14px;">
+          <i class="fas fa-exclamation-triangle"></i>
+          Erreur de traitement des donnees. Verifiez la console.
+        </div>`);
+      console.error('[showMargesSubPanel] Erreur parse JSON :', e, '\nReponse brute :', res);
+    }
+  }).fail(function(xhr, status, err) {
+    container.html(`
+      <div style="color:#dc2626;padding:20px;font-size:12px;border-left:3px solid #dc2626;background:#fef2f2;border-radius:5px;margin:14px;">
+        <i class="fas fa-exclamation-triangle"></i>
+        Echec de la requete AJAX : ${status} — ${err}
+      </div>`);
+    console.error('[showMargesSubPanel] AJAX fail :', status, err);
+  });
 }
+
 
 function filterMargeByDate() {
-    const selectedDate = $('#marge_date_picker').val();
-    showMargesSubPanel('jours', selectedDate);
+  const picker = document.getElementById('marge_date_picker');
+  const date   = picker ? picker.value : new Date().toISOString().split('T')[0];
+  showMargesSubPanel('jours', { date });
 }
 
-function renderProfessionalTable(type, data) {
-    let html = `
-        <div class="marge-container animated fadeIn">
-            <div class="stats-cards">
-                ${generateQuickStats(data)}
-            </div>
-            <div class="table-responsive">
-                <table class="pro-table">
-                    <thead>${generateHeaders(type)}</thead>
-                    <tbody>${generateRows(type, data)}</tbody>
-                </table>
-            </div>
-        </div>`;
-    $('#marges-content').html(html);
+function filterMargeByRange() {
+  const activeBtnEl = document.querySelector('#marges .sub-tab-btn.active');
+  const type  = activeBtnEl ? activeBtnEl.id.replace('mtab-', '') : 'semaines';
+  const debut = (document.getElementById('marge_date_debut') || {}).value || '';
+  const fin   = (document.getElementById('marge_date_fin')   || {}).value || '';
+  showMargesSubPanel(type, { debut, fin });
 }
+
+function renderMargesPanel(type, data) {
+  const renderers = {
+    jours    : renderMargesJour,
+    semaines : renderMargesSemaines,
+    mois     : renderMargesMois,
+    produits : renderMargesProduits,
+    familles : renderMargesFamilles,
+    total    : renderMargesTotale,
+    evolution: renderMargesEvolution,
+  };
+  const fn = renderers[type];
+  if (fn) fn(data);
+  else $('#marges-content').html('<p style="color:#dc2626;padding:20px;">Type non reconnu : ' + type + '</p>');
+}
+
+// ── KPI Cards builder ─────────────────────────────────────────
+function buildKpiRow(cards) {
+  const cols = cards.length <= 3 ? cards.length : 4;
+  let html = `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:10px;margin-bottom:14px;">`;
+  cards.forEach(c => {
+    html += `
+      <div class="kpi-card ${c.cls || 'kpi-blue'}">
+        <div class="kpi-label"><i class="fas ${c.icon}"></i> ${c.label}</div>
+        <div class="kpi-value" style="${c.size ? 'font-size:'+c.size+';' : ''}">${c.value}</div>
+        ${c.sub ? `<div style="font-size:9.5px;color:#9ca3af;margin-top:2px;">${c.sub}</div>` : ''}
+      </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderMargesJour(data) {
+  const d        = data[0] || {};
+  const ca       = parseFloat(d.ca       || 0);
+  const marge    = parseFloat(d.marge    || 0);
+  const coût     = parseFloat(d.cout_achat || ca - marge);
+  const remises  = parseFloat(d.remises  || 0);
+  const tickets  = parseInt(d.nb_ventes  || 0);
+  const tauxB    = ca > 0 ? (marge / ca * 100) : 0;
+  const panier   = tickets > 0 ? (ca / tickets) : 0;
+  const margeN   = marge - remises;
+  const products = data[0]?.produits || [];
+
+  let html = buildKpiRow([
+    { cls:'kpi-blue',   icon:'fa-coins',          label:'CA du jour',       value: fmtXAF(ca) },
+    { cls:'kpi-green',  icon:'fa-chart-line',     label:'Marge brute',      value: fmtXAF(marge),   sub: fmtPct(tauxB) + ' du CA' },
+    { cls:'kpi-amber',  icon:'fa-tag',            label:'Impact remises',   value: fmtXAF(remises), sub: 'marge nette : ' + fmtXAF(margeN) },
+    { cls:'kpi-purple', icon:'fa-receipt',        label:'Tickets / Panier', value: tickets + ' / ' + fmtXAF(panier), size:'12px' },
+  ]);
+
+  // Barre de decomposition CA
+  const coutPct  = ca > 0 ? (coût  / ca * 100).toFixed(1) : 0;
+  const margePct = ca > 0 ? (marge / ca * 100).toFixed(1) : 0;
+  html += `
+    <div class="stat-box" style="margin-bottom:14px;">
+      <div class="stat-box-title"><i class="fas fa-chart-bar"></i> Decomposition du CA</div>
+      <div style="margin-top:12px;">
+        <div style="display:flex;gap:0;border-radius:8px;overflow:hidden;height:28px;margin-bottom:8px;">
+          <div style="width:${coutPct}%;background:#dc2626;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:10px;color:white;font-weight:700;white-space:nowrap;padding:0 6px;">${coutPct > 8 ? 'Cout ' + coutPct + '%' : ''}</span>
+          </div>
+          <div style="width:${margePct}%;background:#16a34a;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:10px;color:white;font-weight:700;white-space:nowrap;padding:0 6px;">${margePct > 5 ? 'Marge ' + margePct + '%' : ''}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+          <span style="font-size:10px;"><span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px;margin-right:4px;"></span>Cout achat ${fmtXAF(coût)} (${coutPct}%)</span>
+          <span style="font-size:10px;"><span style="display:inline-block;width:10px;height:10px;background:#16a34a;border-radius:2px;margin-right:4px;"></span>Marge brute ${fmtXAF(marge)} (${margePct}%)</span>
+          <span style="font-size:10px;"><span style="display:inline-block;width:10px;height:10px;background:#d97706;border-radius:2px;margin-right:4px;"></span>Remises ${fmtXAF(remises)}</span>
+        </div>
+      </div>
+    </div>`;
+
+  // Top produits par marge du jour
+  if (products.length) {
+    const maxMarge = Math.max(...products.map(p => parseFloat(p.marge) || 0), 1);
+    html += `
+      <div class="stat-box">
+        <div class="stat-box-title"><i class="fas fa-star"></i> Top produits — Marge du jour</div>
+        <table class="data-table" style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Produit</th>
+              <th style="text-align:center;">Qte</th>
+              <th style="text-align:right;">CA</th>
+              <th style="text-align:right;">Marge brute</th>
+              <th style="text-align:center;">Taux</th>
+              <th style="text-align:center;">Contribution</th>
+            </tr>
+          </thead>
+          <tbody>`;
+    products.forEach((p, i) => {
+      const pm = parseFloat(p.marge || 0);
+      const pc = parseFloat(p.ca    || 0);
+      const pt = pc > 0 ? pm / pc * 100 : 0;
+      html += `
+        <tr>
+          <td style="font-size:10px;color:#9ca3af;font-family:'DM Mono',monospace;">${i+1}</td>
+          <td><div style="font-weight:600;font-size:11.5px;">${escHtml(p.nom)}</div></td>
+          <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;">${p.qte}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;">${fmtXAF(pc)}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:${pm >= 0 ? '#16a34a' : '#dc2626'};">${fmtXAF(pm)}</td>
+          <td style="text-align:center;">${margeBadge(pt)}</td>
+          <td style="text-align:center;">${miniBarH(pm, maxMarge, MARGE_COLORS[i % MARGE_COLORS.length])}</td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+
+  $('#marges-content').html(html);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  2. MARGE / SEMAINES
+// ══════════════════════════════════════════════════════════════
+function renderMargesSemaines(data) {
+  const totCA    = data.reduce((s, r) => s + parseFloat(r.ca    || 0), 0);
+  const totMarge = data.reduce((s, r) => s + parseFloat(r.marge || 0), 0);
+  const maxMarge = Math.max(...data.map(r => parseFloat(r.marge || 0)), 1);
+  const best     = [...data].sort((a,b) => parseFloat(b.marge) - parseFloat(a.marge))[0] || {};
+
+  let html = buildKpiRow([
+    { cls:'kpi-blue',   icon:'fa-coins',       label:'CA Total',        value: fmtXAF(totCA) },
+    { cls:'kpi-green',  icon:'fa-chart-line',  label:'Marge Totale',    value: fmtXAF(totMarge), sub: fmtPct(totCA > 0 ? totMarge/totCA*100 : 0) + ' du CA' },
+    { cls:'kpi-amber',  icon:'fa-trophy',      label:'Meilleure sem.',  value: 'S' + (best.semaine || '—'), sub: fmtXAF(best.marge || 0), size:'14px' },
+    { cls:'kpi-purple', icon:'fa-calculator',  label:'Marge moy./sem.', value: fmtXAF(data.length ? totMarge / data.length : 0) },
+  ]);
+
+  // Barres semaine
+  html += '<div class="stat-box" style="margin-bottom:14px;"><div class="stat-box-title">Evolution marge par semaine</div><div style="margin-top:10px;">';
+  data.forEach((r, i) => {
+    const m   = parseFloat(r.marge || 0);
+    const c   = parseFloat(r.ca    || 0);
+    const t   = c > 0 ? m/c*100 : 0;
+    const pct = (m / maxMarge * 100).toFixed(1);
+    html += `
+      <div class="bar-row">
+        <span class="bar-label">Sem. ${r.semaine || r.label}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${m >= 0 ? '#16a34a' : '#dc2626'};"></div>
+        </div>
+        <span class="bar-val" style="color:${m >= 0 ? '#16a34a' : '#dc2626'};font-weight:700;">${fmtXAF(m)}</span>
+        <span style="margin-left:8px;">${margeBadge(t)}</span>
+      </div>`;
+  });
+  html += '</div></div>';
+
+  // Table
+  html += `
+    <div class="stat-box">
+      <div class="stat-box-title">Detail par semaine</div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead>
+          <tr>
+            <th>Semaine</th>
+            <th style="text-align:center;">Periode</th>
+            <th style="text-align:center;">Tickets</th>
+            <th style="text-align:right;">CA</th>
+            <th style="text-align:right;">Cout achat</th>
+            <th style="text-align:right;">Marge brute</th>
+            <th style="text-align:right;">Remises</th>
+            <th style="text-align:right;">Marge nette</th>
+            <th style="text-align:center;">Taux</th>
+            <th style="text-align:center;">Tendance</th>
+          </tr>
+        </thead>
+        <tbody>`;
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca     || 0);
+    const mg  = parseFloat(r.marge  || 0);
+    const rm  = parseFloat(r.remises|| 0);
+    const ct  = parseFloat(r.cout_achat || ca - mg);
+    const mn  = mg - rm;
+    const tB  = ca > 0 ? mg/ca*100 : 0;
+    const tN  = ca > 0 ? mn/ca*100 : 0;
+    html += `
+      <tr>
+        <td style="font-weight:700;font-family:'DM Mono',monospace;">S${r.semaine || r.label}</td>
+        <td style="text-align:center;font-size:10px;color:#9ca3af;">${r.debut || ''} ${r.fin ? '- ' + r.fin : ''}</td>
+        <td style="text-align:center;">${r.nb_ventes || '—'}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;">${fmtXAF(ca)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#dc2626;">${fmtXAF(ct)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:${mg >= 0 ? '#16a34a' : '#dc2626'};">${fmtXAF(mg)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#d97706;">${fmtXAF(rm)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:${mn >= 0 ? '#1d4ed8' : '#dc2626'};">${fmtXAF(mn)}</td>
+        <td style="text-align:center;">${margeBadge(tB)}</td>
+        <td style="text-align:center;">${tendanceMarge(mg, data[i-1]?.marge)}</td>
+      </tr>`;
+  });
+  // Ligne total
+  const totCout = data.reduce((s,r) => s + parseFloat(r.cout_achat || 0), 0);
+  const totRem  = data.reduce((s,r) => s + parseFloat(r.remises    || 0), 0);
+  html += `
+      <tr style="background:#f8fafc;border-top:2px solid #1d4ed8;">
+        <td colspan="3" style="padding:8px 10px;font-weight:800;">TOTAL</td>
+        <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:#1d4ed8;">${fmtXAF(totCA)}</td>
+        <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:#dc2626;">${fmtXAF(totCout)}</td>
+        <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:#16a34a;">${fmtXAF(totMarge)}</td>
+        <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:#d97706;">${fmtXAF(totRem)}</td>
+        <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:#1d4ed8;">${fmtXAF(totMarge - totRem)}</td>
+        <td style="padding:8px 10px;text-align:center;">${margeBadge(totCA > 0 ? totMarge/totCA*100 : 0)}</td>
+        <td></td>
+      </tr>
+    </tbody></table></div>`;
+
+  $('#marges-content').html(html);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  3. MARGE / MOIS
+// ══════════════════════════════════════════════════════════════
+function renderMargesMois(data) {
+  const totCA    = data.reduce((s,r) => s + parseFloat(r.ca    || 0), 0);
+  const totMarge = data.reduce((s,r) => s + parseFloat(r.marge || 0), 0);
+  const totRem   = data.reduce((s,r) => s + parseFloat(r.remises|| 0), 0);
+  const maxMarge = Math.max(...data.map(r => parseFloat(r.marge || 0)), 1);
+  const MOIS_FR  = ['','Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
+
+  let html = buildKpiRow([
+    { cls:'kpi-blue',   icon:'fa-coins',       label:'CA Annuel',        value: fmtXAF(totCA) },
+    { cls:'kpi-green',  icon:'fa-chart-line',  label:'Marge Totale',     value: fmtXAF(totMarge), sub: fmtPct(totCA > 0 ? totMarge/totCA*100 : 0) },
+    { cls:'kpi-amber',  icon:'fa-tag',         label:'Remises totales',  value: fmtXAF(totRem) },
+    { cls:'kpi-purple', icon:'fa-calculator',  label:'Marge nette tot.', value: fmtXAF(totMarge - totRem) },
+  ]);
+
+  // Graphe mensuel double barre CA vs Marge
+  html += '<div class="stat-box" style="margin-bottom:14px;"><div class="stat-box-title">CA vs Marge — vue mensuelle</div><div style="margin-top:12px;">';
+  const maxCA = Math.max(...data.map(r => parseFloat(r.ca || 0)), 1);
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca    || 0);
+    const mg  = parseFloat(r.marge || 0);
+    const t   = ca > 0 ? mg/ca*100 : 0;
+    const label = r.nom_mois || MOIS_FR[parseInt(r.mois)] || r.mois;
+    html += `
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+          <span style="width:32px;font-size:10px;font-weight:700;color:#6b7280;text-align:right;">${label}</span>
+          <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+            <div style="background:#e0e7ff;border-radius:3px;height:8px;overflow:hidden;">
+              <div style="width:${(ca/maxCA*100).toFixed(1)}%;background:#1d4ed8;height:8px;border-radius:3px;"></div>
+            </div>
+            <div style="background:#dcfce7;border-radius:3px;height:8px;overflow:hidden;">
+              <div style="width:${(Math.max(mg,0)/maxCA*100).toFixed(1)}%;background:#16a34a;height:8px;border-radius:3px;"></div>
+            </div>
+          </div>
+          <span style="width:90px;font-size:10px;text-align:right;font-family:'DM Mono',monospace;color:#1d4ed8;">${fmtXAF(ca)}</span>
+          <span style="width:80px;font-size:10px;text-align:right;font-family:'DM Mono',monospace;color:#16a34a;font-weight:700;">${fmtXAF(mg)}</span>
+          <span style="width:50px;">${margeBadge(t)}</span>
+        </div>
+      </div>`;
+  });
+  html += `<div style="display:flex;gap:16px;margin-top:6px;padding-left:40px;">
+    <span style="font-size:9.5px;"><span style="display:inline-block;width:10px;height:6px;background:#1d4ed8;border-radius:2px;margin-right:4px;"></span>CA</span>
+    <span style="font-size:9.5px;"><span style="display:inline-block;width:10px;height:6px;background:#16a34a;border-radius:2px;margin-right:4px;"></span>Marge brute</span>
+  </div></div></div>`;
+
+  // Table mensuelle
+  html += `
+    <div class="stat-box">
+      <div class="stat-box-title">Detail mensuel</div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead>
+          <tr>
+            <th>Mois</th>
+            <th style="text-align:center;">Tickets</th>
+            <th style="text-align:right;">CA</th>
+            <th style="text-align:right;">Cout achat</th>
+            <th style="text-align:right;">Marge brute</th>
+            <th style="text-align:right;">Remises</th>
+            <th style="text-align:right;">Marge nette</th>
+            <th style="text-align:center;">Tx brut</th>
+            <th style="text-align:center;">Tx net</th>
+            <th style="text-align:center;">Evol.</th>
+          </tr>
+        </thead>
+        <tbody>`;
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca      || 0);
+    const mg  = parseFloat(r.marge   || 0);
+    const rm  = parseFloat(r.remises || 0);
+    const ct  = parseFloat(r.cout_achat || ca - mg);
+    const mn  = mg - rm;
+    const tB  = ca > 0 ? mg/ca*100 : 0;
+    const tN  = ca > 0 ? mn/ca*100 : 0;
+    const label = r.nom_mois || MOIS_FR[parseInt(r.mois)] || r.mois;
+    html += `
+      <tr>
+        <td style="font-weight:700;">${label} ${r.annee || ''}</td>
+        <td style="text-align:center;">${r.nb_ventes || '—'}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;">${fmtXAF(ca)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#dc2626;">${fmtXAF(ct)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:${mg >= 0 ? '#16a34a' : '#dc2626'};">${fmtXAF(mg)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#d97706;">${fmtXAF(rm)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:#1d4ed8;">${fmtXAF(mn)}</td>
+        <td style="text-align:center;">${margeBadge(tB)}</td>
+        <td style="text-align:center;">${margeBadge(tN)}</td>
+        <td style="text-align:center;">${tendanceMarge(mg, data[i-1]?.marge)}</td>
+      </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  $('#marges-content').html(html);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  4. MARGE / PRODUITS
+// ══════════════════════════════════════════════════════════════
+function renderMargesProduits(data) {
+  const totCA    = data.reduce((s,r) => s + parseFloat(r.ca    || 0), 0);
+  const totMarge = data.reduce((s,r) => s + parseFloat(r.marge || 0), 0);
+  const topMarge = [...data].sort((a,b) => parseFloat(b.marge) - parseFloat(a.marge))[0] || {};
+  const topTaux  = [...data].sort((a,b) => {
+    const tA = parseFloat(a.ca) > 0 ? parseFloat(a.marge)/parseFloat(a.ca) : 0;
+    const tB = parseFloat(b.ca) > 0 ? parseFloat(b.marge)/parseFloat(b.ca) : 0;
+    return tB - tA;
+  })[0] || {};
+  const negatifs = data.filter(r => parseFloat(r.marge) < 0).length;
+  const maxMarge = Math.max(...data.map(r => parseFloat(r.marge || 0)), 1);
+
+  let html = buildKpiRow([
+    { cls:'kpi-blue',   icon:'fa-coins',              label:'CA Total',            value: fmtXAF(totCA) },
+    { cls:'kpi-green',  icon:'fa-chart-line',         label:'Marge Totale',        value: fmtXAF(totMarge), sub: fmtPct(totCA>0?totMarge/totCA*100:0) },
+    { cls:'kpi-amber',  icon:'fa-trophy',             label:'+ Contributeur',      value: escHtml(topMarge.nom || '—'), size:'11px', sub: fmtXAF(topMarge.marge||0) },
+    { cls:'kpi-red',    icon:'fa-exclamation-circle', label:'Marges negatives',    value: negatifs + ' produit' + (negatifs>1?'s':'') },
+  ]);
+
+  // Filtres tri
+  html += `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+      <select id="prod-marge-tri" onchange="sortMargesProduits()"
+        style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;outline:none;color:#111827;">
+        <option value="marge">Trier par marge</option>
+        <option value="taux">Trier par taux</option>
+        <option value="ca">Trier par CA</option>
+        <option value="qte">Trier par quantite</option>
+      </select>
+      <div style="position:relative;flex:1;min-width:140px;">
+        <i class="fas fa-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:10px;"></i>
+        <input type="text" id="marge-prod-search" placeholder="Filtrer..." oninput="filterMargeTable()"
+          style="width:100%;padding:5px 8px 5px 24px;border:1px solid #e5e7eb;border-radius:5px;font-size:11px;outline:none;color:#111827;">
+      </div>
+    </div>`;
+
+  html += `
+    <div class="stat-box">
+      <div class="stat-box-title">Analyse marge par produit</div>
+      <div style="overflow-x:auto;max-height:450px;overflow-y:auto;">
+        <table class="data-table" id="marge-prod-table" style="margin-top:8px;min-width:720px;">
+          <thead>
+            <tr>
+              <th style="position:sticky;top:0;background:#f9fafb;">#</th>
+              <th style="position:sticky;top:0;background:#f9fafb;">Produit</th>
+              <th style="position:sticky;top:0;background:#f9fafb;text-align:center;">Qte</th>
+              <th style="position:sticky;top:0;background:#f9fafb;text-align:right;">CA</th>
+              <th style="position:sticky;top:0;background:#f9fafb;text-align:right;">Cout achat</th>
+              <th style="position:sticky;top:0;background:#f9fafb;text-align:right;">Marge brute</th>
+              <th style="position:sticky;top:0;background:#f9fafb;text-align:center;">Taux</th>
+              <th style="position:sticky;top:0;background:#f9fafb;text-align:center;">Contribution</th>
+              <th style="position:sticky;top:0;background:#f9fafb;text-align:center;">Profil</th>
+            </tr>
+          </thead>
+          <tbody id="marge-prod-tbody">`;
+
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca    || 0);
+    const mg  = parseFloat(r.marge || 0);
+    const ct  = ca - mg;
+    const tB  = ca > 0 ? mg/ca*100 : 0;
+    const contrib = totCA > 0 ? mg/totCA*100 : 0;
+    const profil = tB >= 30 ? '<span style="color:#16a34a;font-weight:700;font-size:10px;">Rentable</span>'
+                 : tB >= 15 ? '<span style="color:#d97706;font-weight:700;font-size:10px;">Correct</span>'
+                 : tB >= 0  ? '<span style="color:#f97316;font-weight:700;font-size:10px;">Faible</span>'
+                 : '<span style="color:#dc2626;font-weight:700;font-size:10px;">Negatif</span>';
+    html += `
+      <tr>
+        <td style="font-size:10px;color:#9ca3af;font-family:'DM Mono',monospace;">${i+1}</td>
+        <td>
+          <div style="font-weight:600;font-size:11.5px;">${escHtml(r.nom || r.nom_commercial || '')}</div>
+          <div style="font-size:9.5px;color:#9ca3af;">${escHtml(r.molecule || r.famille || '')}</div>
+        </td>
+        <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;">${r.quantite || r.qte || 0}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;">${fmtXAF(ca)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#dc2626;">${fmtXAF(ct)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:${mg >= 0 ? '#16a34a' : '#dc2626'};">${fmtXAF(mg)}</td>
+        <td style="text-align:center;">${margeBadge(tB)}</td>
+        <td style="text-align:center;">${miniBarH(Math.max(mg,0), maxMarge, MARGE_COLORS[i % MARGE_COLORS.length])}
+          <span style="font-size:9px;color:#6b7280;margin-left:4px;">${contrib.toFixed(1)}%</span>
+        </td>
+        <td style="text-align:center;">${profil}</td>
+      </tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+  $('#marges-content').html(html);
+}
+
+function filterMargeTable() {
+  const term = (document.getElementById('marge-prod-search')?.value || '').toLowerCase();
+  document.querySelectorAll('#marge-prod-tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(term) ? '' : 'none';
+  });
+}
+function sortMargesProduits() {
+  // Recharge simplement avec tri serveur — ou peut trier côté client
+  const key = document.getElementById('prod-marge-tri')?.value;
+  const tbody = document.getElementById('marge-prod-tbody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const colIdx = { marge:5, ca:3, taux:6, qte:2 };
+  rows.sort((a, b) => {
+    const va = parseFloat(a.cells[colIdx[key] || 5]?.textContent.replace(/\s/g,'').replace(',','.') || 0);
+    const vb = parseFloat(b.cells[colIdx[key] || 5]?.textContent.replace(/\s/g,'').replace(',','.') || 0);
+    return vb - va;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  5. MARGE / FAMILLES
+// ══════════════════════════════════════════════════════════════
+function renderMargesFamilles(data) {
+  const totCA    = data.reduce((s,r) => s + parseFloat(r.ca    || 0), 0);
+  const totMarge = data.reduce((s,r) => s + parseFloat(r.marge || 0), 0);
+  const maxMarge = Math.max(...data.map(r => parseFloat(r.marge || 0)), 1);
+
+  let html = buildKpiRow([
+    { cls:'kpi-blue',  icon:'fa-layer-group', label:'Familles actives', value: data.length },
+    { cls:'kpi-green', icon:'fa-chart-line',  label:'Marge Totale',     value: fmtXAF(totMarge), sub: fmtPct(totCA>0?totMarge/totCA*100:0) },
+    { cls:'kpi-amber', icon:'fa-coins',       label:'CA Total',         value: fmtXAF(totCA) },
+  ]);
+
+  // Grille familles
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:14px;">';
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca    || 0);
+    const mg  = parseFloat(r.marge || 0);
+    const t   = ca > 0 ? mg/ca*100 : 0;
+    const pct = (Math.max(mg,0) / maxMarge * 100).toFixed(1);
+    const col = MARGE_COLORS[i % MARGE_COLORS.length];
+    html += `
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;border-left:3px solid ${col};">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${col};margin-bottom:4px;">
+          <i class="fas fa-layer-group"></i> Famille
+        </div>
+        <div style="font-weight:700;font-size:12px;color:#111827;margin-bottom:6px;">${escHtml(r.nom_famille || r.nom || '')}</div>
+        <div style="font-family:'DM Mono',monospace;font-weight:800;font-size:13px;color:${mg >= 0 ? '#16a34a' : '#dc2626'};margin-bottom:2px;">${fmtXAF(mg)}</div>
+        <div style="font-size:9.5px;color:#9ca3af;margin-bottom:8px;">CA : ${fmtXAF(ca)} &bull; ${fmtPct(t)}</div>
+        <div style="background:#f3f4f6;border-radius:99px;height:5px;overflow:hidden;">
+          <div style="width:${pct}%;background:${col};height:5px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:9.5px;color:#9ca3af;">${r.nb_produits || 0} ref.</span>
+          ${margeBadge(t)}
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+
+  // Table sous-familles
+  html += `
+    <div class="stat-box">
+      <div class="stat-box-title">Detail par famille et sous-famille</div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead>
+          <tr>
+            <th>Famille / Sous-famille</th>
+            <th style="text-align:center;">Produits</th>
+            <th style="text-align:center;">Qte vendue</th>
+            <th style="text-align:right;">CA</th>
+            <th style="text-align:right;">Cout achat</th>
+            <th style="text-align:right;">Marge brute</th>
+            <th style="text-align:center;">Taux</th>
+            <th style="text-align:center;">Part CA</th>
+          </tr>
+        </thead>
+        <tbody>`;
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca    || 0);
+    const mg  = parseFloat(r.marge || 0);
+    const ct  = ca - mg;
+    const t   = ca > 0 ? mg/ca*100 : 0;
+    const partCA = totCA > 0 ? ca/totCA*100 : 0;
+    html += `
+      <tr style="background:#f8fafc;">
+        <td style="font-weight:800;font-size:12px;color:#1d4ed8;padding:8px 10px;">
+          <i class="fas fa-layer-group" style="margin-right:4px;"></i> ${escHtml(r.nom_famille || r.nom || '')}
+        </td>
+        <td style="text-align:center;">${r.nb_produits || '—'}</td>
+        <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;">${r.quantite || r.qte || 0}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;">${fmtXAF(ca)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#dc2626;">${fmtXAF(ct)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:${mg>=0?'#16a34a':'#dc2626'};">${fmtXAF(mg)}</td>
+        <td style="text-align:center;">${margeBadge(t)}</td>
+        <td style="text-align:center;">
+          <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+            ${miniBarH(ca, totCA, MARGE_COLORS[i % MARGE_COLORS.length])}
+            <span style="font-size:9px;font-weight:700;">${partCA.toFixed(1)}%</span>
+          </div>
+        </td>
+      </tr>`;
+    // Sous-familles
+    if (r.sous_familles && r.sous_familles.length) {
+      r.sous_familles.forEach(sf => {
+        const sca = parseFloat(sf.ca    || 0);
+        const smg = parseFloat(sf.marge || 0);
+        const sct = sca - smg;
+        const st  = sca > 0 ? smg/sca*100 : 0;
+        html += `
+          <tr>
+            <td style="padding:6px 10px 6px 28px;font-size:11px;color:#374151;">
+              <i class="fas fa-arrow-right" style="color:#9ca3af;margin-right:4px;font-size:9px;"></i> ${escHtml(sf.nom || '')}
+            </td>
+            <td style="text-align:center;font-size:11px;">${sf.nb_produits || '—'}</td>
+            <td style="text-align:center;font-family:'DM Mono',monospace;">${sf.quantite || 0}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;">${fmtXAF(sca)}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:#dc2626;">${fmtXAF(sct)}</td>
+            <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;font-size:11px;color:${smg>=0?'#16a34a':'#dc2626'};">${fmtXAF(smg)}</td>
+            <td style="text-align:center;">${margeBadge(st)}</td>
+            <td></td>
+          </tr>`;
+      });
+    }
+  });
+  html += '</tbody></table></div>';
+  $('#marges-content').html(html);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  6. MARGE TOTALE (tableau de bord)
+// ══════════════════════════════════════════════════════════════
+function renderMargesTotale(data) {
+  const d      = data[0] || {};
+  const ca     = parseFloat(d.ca          || 0);
+  const mg     = parseFloat(d.marge       || 0);
+  const rm     = parseFloat(d.remises     || 0);
+  const ch     = parseFloat(d.charges     || 0);
+  const mn     = mg - rm;
+  const mo     = mn - ch;
+  const tB     = ca > 0 ? mg/ca*100 : 0;
+  const tN     = ca > 0 ? mn/ca*100 : 0;
+  const tO     = ca > 0 ? mo/ca*100 : 0;
+
+  let html = buildKpiRow([
+    { cls:'kpi-blue',   icon:'fa-coins',       label:'CA Global',        value: fmtXAF(ca) },
+    { cls:'kpi-green',  icon:'fa-chart-line',  label:'Marge brute',      value: fmtXAF(mg),  sub: fmtPct(tB) + ' du CA' },
+    { cls:'kpi-amber',  icon:'fa-minus-circle',label:'Marge nette',      value: fmtXAF(mn),  sub: fmtPct(tN) + ' (apres remises)' },
+    { cls:'kpi-purple', icon:'fa-building',    label:'Marge operationnelle', value: fmtXAF(mo), sub: fmtPct(tO) + ' (apres charges)' },
+  ]);
+
+  // Cascade waterfall visuelle
+  const items = [
+    { label: 'CA Total',      val: ca,  color: '#1d4ed8', type: 'revenue' },
+    { label: 'Cout des ventes',val: -(ca - mg), color: '#dc2626', type: 'cost' },
+    { label: 'Marge brute',   val: mg,  color: '#16a34a', type: 'sub' },
+    { label: 'Remises',       val: -rm, color: '#d97706', type: 'cost' },
+    { label: 'Marge nette',   val: mn,  color: '#0891b2', type: 'sub' },
+    { label: 'Charges',       val: -ch, color: '#7c3aed', type: 'cost' },
+    { label: 'Marge oper.',   val: mo,  color: '#059669', type: 'total' },
+  ];
+  const absMax = Math.max(...items.map(it => Math.abs(it.val)), 1);
+  html += `
+    <div class="stat-box" style="margin-bottom:14px;">
+      <div class="stat-box-title"><i class="fas fa-stream"></i> Cascade de rentabilite</div>
+      <div style="margin-top:14px;">`;
+  items.forEach(it => {
+    const pct = (Math.abs(it.val) / absMax * 100).toFixed(1);
+    const isNeg = it.val < 0;
+    html += `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="width:130px;font-size:11px;font-weight:${it.type==='sub'||it.type==='total'?'700':'500'};color:${it.type==='cost'?'#dc2626':'#111827'};text-align:right;">${it.label}</span>
+        <div style="flex:1;position:relative;height:20px;background:#f9fafb;border-radius:4px;overflow:hidden;">
+          <div style="position:absolute;${isNeg?'right:0':'left:0'};top:0;width:${pct}%;height:100%;background:${it.color};opacity:${it.type==='sub'||it.type==='total'?1:0.7};border-radius:4px;"></div>
+        </div>
+        <span style="width:100px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;color:${it.val >= 0 ? it.color : '#dc2626'};text-align:right;">${isNeg ? '-' : ''}${fmtXAF(Math.abs(it.val))}</span>
+        <span style="width:40px;">${margeBadge(ca > 0 ? it.val/ca*100 : 0)}</span>
+      </div>`;
+  });
+  html += '</div></div>';
+
+  // Comparaison par periode (si disponible)
+  if (data[0]?.periodes) {
+    html += `
+      <div class="stat-box">
+        <div class="stat-box-title">Repartition par periode</div>
+        <table class="data-table" style="margin-top:8px;">
+          <thead>
+            <tr><th>Periode</th><th style="text-align:right;">CA</th>
+            <th style="text-align:right;">Marge brute</th><th style="text-align:center;">Taux</th></tr>
+          </thead>
+          <tbody>`;
+    data[0].periodes.forEach(p => {
+      const pc = parseFloat(p.ca||0), pm = parseFloat(p.marge||0);
+      html += `<tr>
+        <td style="font-weight:600;">${escHtml(p.label)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;">${fmtXAF(pc)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:#16a34a;">${fmtXAF(pm)}</td>
+        <td style="text-align:center;">${margeBadge(pc>0?pm/pc*100:0)}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+
+  $('#marges-content').html(html);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  7. EVOLUTION (graphe temporel avance)
+// ══════════════════════════════════════════════════════════════
+function renderMargesEvolution(data) {
+  const totCA    = data.reduce((s,r) => s + parseFloat(r.ca    || 0), 0);
+  const totMarge = data.reduce((s,r) => s + parseFloat(r.marge || 0), 0);
+  const maxCA    = Math.max(...data.map(r => parseFloat(r.ca    || 0)), 1);
+  const maxMarge = Math.max(...data.map(r => Math.abs(parseFloat(r.marge || 0))), 1);
+
+  // Tendance lineaire simple
+  const n = data.length;
+  const avgMarge = n > 0 ? totMarge / n : 0;
+  const trend = n >= 2
+    ? parseFloat(data[n-1].marge||0) > parseFloat(data[0].marge||0) ? 'hausse' : 'baisse'
+    : 'stable';
+  const trendColor = trend === 'hausse' ? '#16a34a' : trend === 'baisse' ? '#dc2626' : '#6b7280';
+  const trendIcon  = trend === 'hausse' ? 'fa-arrow-trend-up' : trend === 'baisse' ? 'fa-arrow-trend-down' : 'fa-minus';
+
+  let html = buildKpiRow([
+    { cls:'kpi-blue',   icon:'fa-coins',       label:'CA Total periode', value: fmtXAF(totCA) },
+    { cls:'kpi-green',  icon:'fa-chart-line',  label:'Marge cumulee',    value: fmtXAF(totMarge), sub: fmtPct(totCA>0?totMarge/totCA*100:0) },
+    { cls:'kpi-amber',  icon:'fa-calendar-day',label:'Marge moy./jour',  value: fmtXAF(avgMarge) },
+    { cls: trend === 'hausse' ? 'kpi-green' : 'kpi-red', icon: trendIcon, label: 'Tendance', value: trend.charAt(0).toUpperCase() + trend.slice(1) },
+  ]);
+
+  // Graphe evolution double courbe (CA vs Marge)
+  html += `
+    <div class="stat-box" style="margin-bottom:14px;">
+      <div class="stat-box-title"><i class="fas fa-chart-line"></i> Evolution CA et Marge — vue temporelle</div>
+      <div style="margin-top:12px;overflow-x:auto;">
+        <div style="min-width:${Math.max(data.length * 40, 400)}px;">`;
+
+  // Legende
+  html += `
+      <div style="display:flex;gap:16px;margin-bottom:8px;">
+        <span style="font-size:9.5px;"><span style="display:inline-block;width:16px;height:3px;background:#1d4ed8;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>CA</span>
+        <span style="font-size:9.5px;"><span style="display:inline-block;width:16px;height:3px;background:#16a34a;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Marge brute</span>
+        <span style="font-size:9.5px;"><span style="display:inline-block;width:16px;height:3px;background:#dc2626;border-radius:2px;vertical-align:middle;"></span> Marge negative</span>
+      </div>`;
+
+  // Barres groupees
+  html += `<div style="display:flex;align-items:flex-end;gap:3px;height:120px;border-bottom:1px solid #e5e7eb;">`;
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca    || 0);
+    const mg  = parseFloat(r.marge || 0);
+    const hCA = (ca  / maxCA    * 110).toFixed(0);
+    const hMG = (Math.abs(mg) / maxCA * 110).toFixed(0);
+    const mgCol = mg >= 0 ? '#16a34a' : '#dc2626';
+    html += `
+      <div style="display:flex;align-items:flex-end;gap:1px;flex:1;position:relative;" title="${r.date || r.label || ''} | CA: ${fmtXAF(ca)} | Marge: ${fmtXAF(mg)}">
+        <div style="width:48%;background:#1d4ed8;height:${hCA}px;border-radius:2px 2px 0 0;opacity:.8;"></div>
+        <div style="width:48%;background:${mgCol};height:${hMG}px;border-radius:2px 2px 0 0;"></div>
+      </div>`;
+  });
+  html += `</div>`;
+
+  // Labels dates
+  html += `<div style="display:flex;gap:3px;">`;
+  const step = Math.ceil(data.length / 12);
+  data.forEach((r, i) => {
+    const label = i % step === 0 ? (r.date || r.label || '').slice(5) : '';
+    html += `<div style="flex:1;text-align:center;font-size:8px;color:#9ca3af;margin-top:2px;overflow:hidden;">${label}</div>`;
+  });
+  html += '</div></div></div></div>';
+
+  // Table evolution avec tendance
+  html += `
+    <div class="stat-box">
+      <div class="stat-box-title">Detail journalier</div>
+      <div style="max-height:360px;overflow-y:auto;">
+        <table class="data-table" style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th style="text-align:center;">Tickets</th>
+              <th style="text-align:right;">CA</th>
+              <th style="text-align:right;">Cout achat</th>
+              <th style="text-align:right;">Marge brute</th>
+              <th style="text-align:right;">Remises</th>
+              <th style="text-align:right;">Marge nette</th>
+              <th style="text-align:center;">Taux</th>
+              <th style="text-align:center;">Evol.</th>
+            </tr>
+          </thead>
+          <tbody>`;
+  let cumCA = 0, cumMG = 0;
+  data.forEach((r, i) => {
+    const ca  = parseFloat(r.ca      || 0);
+    const mg  = parseFloat(r.marge   || 0);
+    const rm  = parseFloat(r.remises || 0);
+    const ct  = ca - mg;
+    const mn  = mg - rm;
+    const t   = ca > 0 ? mg/ca*100 : 0;
+    cumCA += ca; cumMG += mg;
+    html += `
+      <tr>
+        <td style="font-weight:600;font-size:11px;">${r.date || r.label || ''}</td>
+        <td style="text-align:center;">${r.nb_ventes || '—'}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;">${fmtXAF(ca)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#dc2626;">${fmtXAF(ct)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:${mg>=0?'#16a34a':'#dc2626'};">${fmtXAF(mg)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;color:#d97706;">${fmtXAF(rm)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:#1d4ed8;">${fmtXAF(mn)}</td>
+        <td style="text-align:center;">${margeBadge(t)}</td>
+        <td style="text-align:center;">${tendanceMarge(mg, data[i-1]?.marge)}</td>
+      </tr>`;
+  });
+  // Cumul
+  html += `
+    <tr style="background:#f0f9ff;border-top:2px solid #1d4ed8;">
+      <td colspan="2" style="padding:8px 10px;font-weight:800;">CUMUL PERIODE</td>
+      <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:#1d4ed8;">${fmtXAF(cumCA)}</td>
+      <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:#dc2626;">${fmtXAF(cumCA - cumMG)}</td>
+      <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:#16a34a;">${fmtXAF(cumMG)}</td>
+      <td colspan="2"></td>
+      <td style="padding:8px 10px;text-align:center;">${margeBadge(cumCA > 0 ? cumMG/cumCA*100 : 0)}</td>
+      <td></td>
+    </tr>`;
+  html += '</tbody></table></div></div>';
+  $('#marges-content').html(html);
+}
+
 
 function formatMoney(num) {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF' }).format(num);
