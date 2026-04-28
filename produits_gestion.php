@@ -949,7 +949,9 @@ h2[style], h2.text-primary { font-size: 13px !important; }
   <ul class="sidebar-menu">
     <li><a href="#"><i class="fas fa-th-large"></i> Dashboard</a></li>
     <li><a href="#"><i class="fas fa-shopping-cart"></i> Ventes</a></li>
+    <li><a href="caisse.php"><i class="fas fa-cash-register"></i>Caisse</a></li>
     <li><a href="#" class="active"><i class="fas fa-boxes"></i> Stocks</a></li>
+    <li><a href="charges.php"><i class="fas fa-file-invoice-dollar"></i>Charges</a></li>
     <li><a href="#" style="color:#ff8585;"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
   </ul>
 </div>

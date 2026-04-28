@@ -1374,6 +1374,7 @@ body {
     <li><a href="ventes.php" class="active"><i class="fas fa-shopping-cart"></i>Ventes</a></li>
     <li><a href="caisse.php"><i class="fas fa-cash-register"></i>Caisse</a></li>
     <li><a href="produits_gestion.php"><i class="fas fa-boxes"></i>Stocks &amp; Flux</a></li>
+    <li><a href="charges.php"><i class="fas fa-file-invoice-dollar"></i>Charges</a></li>
     <li><a href="logout.php" class="nav-danger"><i class="fas fa-sign-out-alt"></i>Déconnexion</a></li>
   </ul>
 
